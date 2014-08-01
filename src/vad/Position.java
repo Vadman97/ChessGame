@@ -48,4 +48,10 @@ public class Position
 			return null;
 		return get(col + 1, row);
 	}
+
+	public Position getLeft() {
+		if (col == 0)
+			return null;
+		return get(col - 1, row);
+	}
 }

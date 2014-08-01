@@ -5,25 +5,25 @@ import java.util.HashMap;
 
 public class AIPlayer implements Player
 {
-	int										playerColor;
-	int										depth				= 3;
-	GameBoard								realBoard;
-	HashMap<CompressedGameBoard, Integer>	cache				= new HashMap<>();
-	
+	int playerColor;
+	int depth = 3;
+	GameBoard realBoard;
+	HashMap<CompressedGameBoard, Integer> cache = new HashMap<>();
+
 	ChessGUI gui;
 
-	int										protectedValWeight	= 2;
+	int protectedValWeight = 2;
 
-	public static final int					MAX					= Integer.MAX_VALUE;
-	public static final int					MIN					= -MAX;
-	
-	private static final boolean UI_ENABLED=false;
+	public static final int MAX = Integer.MAX_VALUE;
+	public static final int MIN = -MAX;
+
+	private static final boolean UI_ENABLED = false;
 
 	public AIPlayer(int playerColor)
 	{
 		this.playerColor = playerColor;
-		if(UI_ENABLED)
-			gui=new ChessGUI(null);
+		if (UI_ENABLED)
+			gui = new ChessGUI(null);
 	}
 
 	@Override
@@ -40,7 +40,7 @@ public class AIPlayer implements Player
 	@Override
 	public void update(GameBoard board)
 	{
-		if(UI_ENABLED)
+		if (UI_ENABLED)
 			gui.updateBoard(board);
 	}
 
@@ -116,6 +116,8 @@ public class AIPlayer implements Player
 		int EMobility = 0;
 		int fProtected = 0;
 		int eProtected = 0;
+		int castleVal = 0;
+		int castleEVal = 0;
 
 		mobility = board.getAllPossibleMoves(playerColor).size();
 		EMobility = board.getAllPossibleMoves(playerColor == Piece.BLACK ? Piece.WHITE : Piece.BLACK).size();
@@ -134,68 +136,79 @@ public class AIPlayer implements Player
 				{
 					switch (p.getType())
 					{
-						case Piece.KING:
-							numK++;
-						case Piece.QUEEN:
-							numQ++;
-						case Piece.ROOK:
-							numR++;
-						case Piece.BISHOP:
-							numB++;
-						case Piece.KNIGHT:
-							numN++;
-						case Piece.PAWN:
-							numP++;
-							if (columnHasPawnF)
-								doubledPawns++;
-							columnHasPawnF = true;
-							if (i == 0 || i == 7 || j == 0 || j == 7)
-								isolatedPawns++;
-							/*
-							 * if (MoveHelper.getAllMoves4Piece(board, Position.get(i, j), false).size() == 0) blockedPawns++;
-							 */
-							break;
+					case Piece.KING:
+						castleVal = MoveHelper.canCastleLeft(board, playerColor, i, j) ? 2 : 0;
+						numK++;
+						break;
+					case Piece.QUEEN:
+						numQ++;
+					case Piece.ROOK:
+						numR++;
+					case Piece.BISHOP:
+						numB++;
+					case Piece.KNIGHT:
+						numN++;
+					case Piece.PAWN:
+						numP++;
+						if (columnHasPawnF)
+							doubledPawns++;
+						columnHasPawnF = true;
+						if (i == 0 || i == 7 || j == 0 || j == 7)
+							isolatedPawns++;
+						/*
+						 * if (MoveHelper.getAllMoves4Piece(board,
+						 * Position.get(i, j), false).size() == 0)
+						 * blockedPawns++;
+						 */
+						break;
 					}
 					/*
-					 * if (MoveHelper.isProtected(board, Position.get(i,j))) fProtected++;
+					 * if (MoveHelper.isProtected(board, Position.get(i,j)))
+					 * fProtected++;
 					 */
-				}
-				else
+				} else
 				{
 					switch (p.getType())
 					{
-						case Piece.KING:
-							numEK++;
-						case Piece.QUEEN:
-							numEQ++;
-						case Piece.ROOK:
-							numER++;
-						case Piece.BISHOP:
-							numEB++;
-						case Piece.KNIGHT:
-							numEN++;
-						case Piece.PAWN:
-							numEP++;
-							if (columnHasPawnE)
-								doubledEPawns++;
-							columnHasPawnE = true;
-							if (i == 0 || i == 8 || j == 0 || j == 8)
-								isolatedEPawns++;
-							/*
-							 * if (MoveHelper.getAllMoves4Piece(board, Position.get(i, j), false).size() == 0) blockedEPawns++;
-							 */
-							break;
+					case Piece.KING:
+						castleEVal = MoveHelper.canCastleLeft(board, playerColor, i, j) ? 1 : 0;
+						numEK++;
+						break;
+					case Piece.QUEEN:
+						numEQ++;
+					case Piece.ROOK:
+						numER++;
+					case Piece.BISHOP:
+						numEB++;
+					case Piece.KNIGHT:
+						numEN++;
+					case Piece.PAWN:
+						numEP++;
+						if (columnHasPawnE)
+							doubledEPawns++;
+						columnHasPawnE = true;
+						if (i == 0 || i == 8 || j == 0 || j == 8)
+							isolatedEPawns++;
+						/*
+						 * if (MoveHelper.getAllMoves4Piece(board,
+						 * Position.get(i, j), false).size() == 0)
+						 * blockedEPawns++;
+						 */
+						break;
 					}
 					/*
-					 * if (MoveHelper.isProtected(board, Position.get(i,j))) eProtected++;
+					 * if (MoveHelper.isProtected(board, Position.get(i,j)))
+					 * eProtected++;
 					 */
 				}
 			}
 		}
-
-		score = (int) (200 * (numK - numEK) + 9 * (numQ - numEQ) + 5 * (numR - numER) + 3 * (numB - numEB + numN - numEN) + 1 * (numP - numEP) - 0.5
-				* (doubledPawns - doubledEPawns + blockedPawns - blockedEPawns + isolatedPawns - isolatedEPawns) + 0.25 * (mobility - EMobility))
-				+ 1 * (fProtected - eProtected);
+		// 200, 9, 5, 3, 1, 0.5, 0.25, 1
+		// 800, 36, 20, 12, 4, 2, 1, 4
+		score = 800 * (numK - numEK) + 36 * (numQ - numEQ) + 20 * (numR - numER) + 12 * (numB - numEB + numN - numEN) + 4
+				* (numP - numEP) - 2
+				* (doubledPawns - doubledEPawns + blockedPawns - blockedEPawns + isolatedPawns - isolatedEPawns) + 1
+				* (mobility - EMobility) + 4 * (fProtected - eProtected) - 2 * (castleVal - castleEVal);
 		// TODO maybe cast is bad
 		return score;
 	}
@@ -218,7 +231,8 @@ public class AIPlayer implements Player
 			{
 				if (board.getPiece(Position.get(i, j)) == null)
 					continue;
-				ArrayList<Move> allPossibleMovesDef = board.getAllPossibleMovesWithDefend(board.getPiece(Position.get(i, j)).getColor());
+				ArrayList<Move> allPossibleMovesDef = board.getAllPossibleMovesWithDefend(board.getPiece(Position.get(i, j))
+						.getColor());
 				ArrayList<Move> allPossibleMovesReg = board.getAllPossibleMoves(board.getPiece(Position.get(i, j)).getColor());
 
 				boolean isProtected = MoveHelper.isProtected(board, Position.get(i, j), allPossibleMovesDef);
@@ -249,14 +263,12 @@ public class AIPlayer implements Player
 						if (numEnemyPieces <= 7)
 						{
 							protectedValWeight = 15;
-						}
-						else
+						} else
 						{
 							protectedValWeight = 6;
 						}
 						score += protectedVal * protectedValWeight;
-					}
-					else
+					} else
 					{
 						if (!isUnderAttack)
 							score += 2;
@@ -264,7 +276,8 @@ public class AIPlayer implements Player
 					if (isUnderAttack)
 					{
 						/*
-						 * if (curPiece.getType() == Piece.QUEEN) { if (!isProtected) score -= 350; else score -= 125; }
+						 * if (curPiece.getType() == Piece.QUEEN) { if
+						 * (!isProtected) score -= 350; else score -= 125; }
 						 */
 						score += (attackValFriendly * 20);
 						if (isProtected)
@@ -272,8 +285,7 @@ public class AIPlayer implements Player
 					}
 					score += (numPieces * 3);
 					score += 2 * (6 - curPiece.getType());
-				}
-				else
+				} else
 				// enemy
 				{
 					if (trueBoardPieces < numPieces)
@@ -286,14 +298,12 @@ public class AIPlayer implements Player
 						if (numPieces <= 7)
 						{
 							protectedValWeight = 14;
-						}
-						else
+						} else
 						{
 							protectedValWeight = 3;
 						}
 						score -= protectedVal * protectedValWeight;
-					}
-					else
+					} else
 					{
 						if (!isUnderAttack)
 							score -= 10;
@@ -301,7 +311,8 @@ public class AIPlayer implements Player
 					if (isUnderAttack)
 					{
 						/*
-						 * if (curPiece.getType() == Piece.QUEEN) { if (!isProtected) score += 100; else score += 25; }
+						 * if (curPiece.getType() == Piece.QUEEN) { if
+						 * (!isProtected) score += 100; else score += 25; }
 						 */
 						score -= (attackValFriendly * 20);
 						if (isProtected)

@@ -70,12 +70,12 @@ public class GameBoard
 		Piece startPiece = getPiece(start);
 		
 		if (m.isFirstKingMove())
-			setHasKingMoved(startPiece.getColor(), true);
+			setHasKingMoved(currentColor, true);
 		if (m.isFirstLRookMove())
-			setHasLRookMoved(startPiece.getColor(), true);
+			setHasLRookMoved(currentColor, true);
 			//System.out.println("LROOK MOVE");
 		if (m.isFirstRRookMove())
-			setHasRRookMoved(startPiece.getColor(), true);
+			setHasRRookMoved(currentColor, true);
 		
 		currentColor = Piece.getOppositeColor(currentColor);
 		
@@ -88,6 +88,9 @@ public class GameBoard
 				setPiece(rookPosition, null);
 			}else if(start.getColumn()+2==dest.getColumn()){
 				//R Castle
+				Position rookPosition=Position.get(7, dest.getRow());
+				setPiece(dest.getLeft(), getPiece(rookPosition));
+				setPiece(rookPosition, null);
 			}
 		}
 		
@@ -100,9 +103,9 @@ public class GameBoard
 
 	public void undo(Move move)
 	{
-		Piece movedPiece = getPiece(move.getDestPosition());
-		setPiece(move.getStartPosition(), movedPiece);
-		setPiece(move.getDestPosition(), move.getKilledPiece());
+		Position start=move.getStartPosition();
+		Position dest=move.getDestPosition();
+		Piece movedPiece = getPiece(dest);
 		if (move.isFirstKingMove())
 		{
 			setHasKingMoved(movedPiece.getColor(), false);
@@ -118,6 +121,25 @@ public class GameBoard
 		}
 		// System.out.println("Move undo: " + move.getKilledPiece());
 		currentColor = Piece.getOppositeColor(currentColor);
+		
+		if(movedPiece.getType()==Piece.KING){
+			if(start.getColumn()-3==dest.getColumn()){
+				//L Castle
+				Position rookOriginalPosition=Position.get(0, dest.getRow());
+				Position rookCurrentPosition=dest.getRight();
+				setPiece(rookOriginalPosition, getPiece(rookCurrentPosition));
+				setPiece(rookCurrentPosition, null);
+			}else if(start.getColumn()+2==dest.getColumn()){
+				//R Castle
+				Position rookOriginalPosition=Position.get(7, dest.getRow());
+				Position rookCurrentPosition=dest.getLeft();
+				setPiece(rookOriginalPosition, getPiece(rookCurrentPosition));
+				setPiece(rookCurrentPosition, null);
+			}
+		}
+		
+		setPiece(move.getStartPosition(), movedPiece);
+		setPiece(move.getDestPosition(), move.getKilledPiece());
 	}
 
 	public ArrayList<Move> getAllPossibleMovesWithoutValidation(int color)

@@ -1,8 +1,12 @@
 package vad;
 
+import java.io.Serializable;
 
-public class Piece
+
+public class Piece implements Serializable
 {
+	private static final long serialVersionUID = -7958308764629834573L;
+	
 	public static Piece[][] allPieces=new Piece[2][6];
 	public static final int	QUEEN = 1, KING = 0, ROOK = 2, KNIGHT = 3, BISHOP = 4, PAWN = 5;
 	public static final int	BLACK=0, WHITE=1;
@@ -38,6 +42,25 @@ public class Piece
 	
 	public String toString(){
 		return (color==BLACK?"Black ":"White ")+NAMES[type];
+	}
+	
+	private static class PieceReference implements Serializable{
+		private static final long serialVersionUID = 1439457913793333450L;
+		
+		private int type;
+		private int	color;
+		public PieceReference(Piece p){
+			type=p.type;
+			color=p.color;
+		}
+		
+		private Object readResolve(){
+			return Piece.allPieces[color][type];
+		}
+	}
+
+	private Object writeReplace(){
+		return new PieceReference(this);
 	}
 	
 	
