@@ -6,7 +6,7 @@ import java.util.HashMap;
 public class AIPlayer implements Player
 {
 	int playerColor;
-	int depth = 3;
+	int depth = 4;
 	GameBoard realBoard;
 	HashMap<CompressedGameBoard, Integer> cache = new HashMap<>();
 
@@ -137,7 +137,7 @@ public class AIPlayer implements Player
 					switch (p.getType())
 					{
 					case Piece.KING:
-						castleVal = MoveHelper.canCastleLeft(board, playerColor, i, j) ? 2 : 0;
+						castleVal = MoveHelper.canCastleLeft(board, playerColor, i, j) ? 2 : 0; //hasCastled
 						numK++;
 						break;
 					case Piece.QUEEN:
