@@ -1,7 +1,20 @@
 package vad;
 
-public class CompressedGameBoard
+import java.io.Serializable;
+
+/**
+ * Compressed Game Board, not efficient in searching or mutating (maybe), but is
+ * very tiny and thus useful in transposition table and networking.
+ * 
+ * TODO maybe we can do all things in compressed game board
+ * 
+ * @author Gary Guo
+ *
+ */
+public class CompressedGameBoard implements Serializable
 {
+	private static final long serialVersionUID = 8167276742376745392L;
+
 	long fst2c;
 	long snd2c;
 	long trd2c;
@@ -19,7 +32,7 @@ public class CompressedGameBoard
 			for (int r = 0; r < 8; r++)
 			{
 				int offset = getOffset(c, r);
-				if (!b.isEmpty(c, r))
+				if (!b.isEmpty(Position.get(c, r)))
 					fst2c |= getPieceNum(b, c, r) << offset;
 				else
 					fst2c |= 0b1111l << offset;
@@ -30,7 +43,7 @@ public class CompressedGameBoard
 			for (int r = 0; r < 8; r++)
 			{
 				int offset = getOffset(c - 2, r);
-				if (!b.isEmpty(c, r))
+				if (!b.isEmpty(Position.get(c, r)))
 					snd2c |= getPieceNum(b, c, r) << offset;
 				else
 					snd2c |= 0b1111l << offset;
@@ -41,7 +54,7 @@ public class CompressedGameBoard
 			for (int r = 0; r < 8; r++)
 			{
 				int offset = getOffset(c - 4, r);
-				if (!b.isEmpty(c, r))
+				if (!b.isEmpty(Position.get(c, r)))
 					trd2c |= getPieceNum(b, c, r) << offset;
 				else
 					trd2c |= 0b1111l << offset;
@@ -52,7 +65,7 @@ public class CompressedGameBoard
 			for (int r = 0; r < 8; r++)
 			{
 				int offset = getOffset(c - 6, r);
-				if (!b.isEmpty(c, r))
+				if (!b.isEmpty(Position.get(c, r)))
 					lst2c |= getPieceNum(b, c, r) << offset;
 				else
 					lst2c |= 0b1111l << offset;

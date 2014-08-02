@@ -50,7 +50,7 @@ public class MoveHelper
 		}
 		return moves;
 	}
-	
+
 	/* getReachablePosition Method Groups */
 
 	/**
@@ -191,7 +191,7 @@ public class MoveHelper
 		getReachableRookPosition(list, board, position);
 		getReachableBishopPosition(list, board, position);
 	}
-	
+
 	/**
 	 * Get all one step reachable points of a king, which includes a position
 	 * that is occupied by friend but protected. While castling is not counted
@@ -232,7 +232,7 @@ public class MoveHelper
 		pos = position.getLeft();
 		if (pos != null)
 			list.add(pos);
-		
+
 	}
 
 	/**
@@ -298,7 +298,7 @@ public class MoveHelper
 	}
 
 	/* End getReachablePosition Method Groups */
-	
+
 	@Deprecated
 	private static ArrayList<Position> getReachableRookPosition(GameBoard board, Piece piece, int col, int row, boolean defend)
 	{
@@ -361,20 +361,19 @@ public class MoveHelper
 
 	public static boolean canCastleLeft(GameBoard board, int color, int col, int row)
 	{
-		if (!board.hasKingMoved(color))
+		if (board.hasKingMoved(color) || board.hasLRookMoved(color))
+			return false;
+		if (board.isEmpty(Position.get(col - 1, row)) && board.isEmpty(Position.get(col - 2, row))
+				&& board.isEmpty(Position.get(col - 3, row))
+				&& !isUnderAttack(board, Position.get(col, row), Piece.getOppositeColor(color))
+				&& !isUnderAttack(board, Position.get(col - 1, row), Piece.getOppositeColor(color))
+				&& !isUnderAttack(board, Position.get(col - 2, row), Piece.getOppositeColor(color)))
 		{
-			if (!board.hasLRookMoved(color))
-			{
-				if (board.isEmpty(col - 1, row) && board.isEmpty(col - 2, row) && board.isEmpty(col - 3, row)
-						&& !isUnderAttack(board, Position.get(col, row), Piece.getOppositeColor(color))
-						&& !isUnderAttack(board, Position.get(col - 1, row), Piece.getOppositeColor(color))
-						&& !isUnderAttack(board, Position.get(col - 2, row), Piece.getOppositeColor(color)))
-				{
-					return true;
-				}
-			}
+			return true;
+		} else
+		{
+			return false;
 		}
-		return false;
 	}
 
 	public static boolean canCastleRight(GameBoard board, int color, int col, int row)
@@ -383,7 +382,7 @@ public class MoveHelper
 		{
 			if (!board.hasRRookMoved(color))
 			{
-				if (board.isEmpty(col + 1, row) && board.isEmpty(col + 2, row)
+				if (board.isEmpty(Position.get(col + 1, row)) && board.isEmpty(Position.get(col + 2, row))
 						&& !isUnderAttack(board, Position.get(col, row), Piece.getOppositeColor(color))
 						&& !isUnderAttack(board, Position.get(col + 1, row), Piece.getOppositeColor(color)))
 				{
@@ -615,6 +614,5 @@ public class MoveHelper
 		}
 		return false;
 	}
-	
 
 }

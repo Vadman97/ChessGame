@@ -1,46 +1,63 @@
 package vad;
 
+import java.io.IOException;
+import java.net.ServerSocket;
+
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+
+import com.nwgjb.xrmi.RMIConnection;
 
 public class Main
 {
 
-	static{
+	static
+	{
 		try
 		{
 			UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-		}
-		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e)
+		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e)
 		{
 			e.printStackTrace();
 		}
 	}
-	
-	public static void main(String[] args)
+
+	static final boolean NETWORKING = false;
+
+	public static void startGame(Player p1, Player p2)
 	{
 		GameBoard board = new GameBoard();
-		Player p1 = new UserPlayer(Piece.WHITE);
-		Player p2 = new UserPlayer(Piece.BLACK);
-		//board=new CompressedGameBoard(board).getGameBoard();
-		p1.update(board);
-		p2.update(board);
 		while (true)
 		{
-			
+
 			if (board.currentColor == Piece.WHITE)
 			{
-				board.apply(p1.makeMove(board));
-				p1.update(board);
-				p2.update(board);
-			}
-			else
+				CompressedGameBoard b = new CompressedGameBoard(board);
+				p2.update(b);
+				board.apply(p1.makeMove(b));
+			} else
 			{
-				board.apply(p2.makeMove(board));
-				p1.update(board);
-				p2.update(board);
+				CompressedGameBoard b = new CompressedGameBoard(board);
+				p1.update(b);
+				board.apply(p2.makeMove(b));
 			}
-			
+
 		}
+	}
+
+	public static void main(String[] args) throws IOException
+	{
+		Player p1 = new UserPlayer(Piece.WHITE);
+		Player p2;
+		if (NETWORKING)
+		{
+			ServerSocket socket = new ServerSocket(12345);
+			p2 = ((ClientPlayerFactory) new RMIConnection(socket.accept()).getBind()).create(Piece.BLACK);
+			socket.close();
+		} else
+		{
+			p2 = new AIPlayer(Piece.BLACK);
+		}
+		startGame(p1, p2);
 	}
 }

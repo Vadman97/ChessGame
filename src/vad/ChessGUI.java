@@ -46,27 +46,23 @@ public class ChessGUI extends JFrame implements ActionListener
 		gameBoard.setLayout(new GridLayout(8, 8));
 		if (color == Piece.WHITE)
 		{
-			for (int row = 0; row < 8; row++)
+			for (Position position : Position.all())
 			{
-				for (int col = 0; col < 8; col++)
-				{
-					PieceButton b = new PieceButton(Position.get(col, row));
-					buttons[col][row] = b;
-					b.addActionListener(this);
-					gameBoard.add(b);
-				}
+				PieceButton b = new PieceButton(position);
+				buttons[position.getColumn()][position.getRow()] = b;
+				b.addActionListener(this);
+				gameBoard.add(b);
 			}
 		} else
 		{
-			for (int row = 7; row >= 0; row--)
+			Position[] all = Position.all();
+			for (int i = all.length - 1; i >= 0; i--)
 			{
-				for (int col = 7; col >= 0; col--)
-				{
-					PieceButton b = new PieceButton(Position.get(col, row));
-					buttons[col][row] = b;
-					b.addActionListener(this);
-					gameBoard.add(b);
-				}
+				Position position = all[i];
+				PieceButton b = new PieceButton(position);
+				buttons[position.getColumn()][position.getRow()] = b;
+				b.addActionListener(this);
+				gameBoard.add(b);
 			}
 		}
 
@@ -81,15 +77,12 @@ public class ChessGUI extends JFrame implements ActionListener
 
 	public void updateBoard(GameBoard board)
 	{
-		for (int row = 0; row < 8; row++)
+		for (Position position : Position.all())
 		{
-			for (int col = 0; col < 8; col++)
-			{
-				if (buttons[col][row].getPiece() != board.getPiece(Position.get(col, row)))
-				{
-					buttons[col][row].setPiece(board.getPiece(Position.get(col, row)));
-				}
-			}
+			PieceButton button = buttons[position.getColumn()][position.getRow()];
+			Piece piece = board.getPiece(position);
+			if (button.getPiece() != piece)
+				button.setPiece(piece);
 		}
 		repaint();
 	}

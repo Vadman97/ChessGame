@@ -1,7 +1,11 @@
 package vad;
 
-public class Move
+import java.io.Serializable;
+
+public class Move implements Serializable
 {
+	private static final long serialVersionUID = 8443779978202842017L;
+	
 	private Position start;
 	private Position dest;
 	private Piece killedPiece;
