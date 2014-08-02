@@ -31,10 +31,10 @@ public class GameBoard
 		board = new Piece[8][8];
 		for (int i = 0; i < 8; i++)
 		{
-			board[i][0] = Piece.allPieces[Piece.BLACK][STARTING_ROW[i]];
-			board[i][7] = Piece.allPieces[Piece.WHITE][STARTING_ROW[i]];
-			board[i][1] = Piece.allPieces[Piece.BLACK][Piece.PAWN];
-			board[i][6] = Piece.allPieces[Piece.WHITE][Piece.PAWN];
+			board[i][0] = Piece.get(Piece.BLACK, STARTING_ROW[i]);
+			board[i][7] = Piece.get(Piece.WHITE, STARTING_ROW[i]);
+			board[i][1] = Piece.get(Piece.BLACK, Piece.PAWN);
+			board[i][6] = Piece.get(Piece.WHITE, Piece.PAWN);
 		}
 	}
 

@@ -97,7 +97,7 @@ public class CompressedGameBoard implements Serializable
 				int extract = (int) ((fst2c >>> getOffset(c, r)) & 0b1111);
 				if (extract == 0b1111)
 					continue;
-				board.board[c][r] = Piece.allPieces[extract >> 3][extract & 0b111];
+				board.board[c][r] = Piece.get(extract >> 3, extract & 0b111);
 			}
 		}
 		for (int c = 2; c < 4; c++)
@@ -107,7 +107,7 @@ public class CompressedGameBoard implements Serializable
 				int extract = (int) ((snd2c >>> getOffset(c - 2, r)) & 0b1111);
 				if (extract == 0b1111)
 					continue;
-				board.board[c][r] = Piece.allPieces[extract >> 3][extract & 0b111];
+				board.board[c][r] = Piece.get(extract >> 3, extract & 0b111);
 			}
 		}
 		for (int c = 4; c < 6; c++)
@@ -117,7 +117,7 @@ public class CompressedGameBoard implements Serializable
 				int extract = (int) ((trd2c >>> getOffset(c - 4, r)) & 0b1111);
 				if (extract == 0b1111)
 					continue;
-				board.board[c][r] = Piece.allPieces[extract >> 3][extract & 0b111];
+				board.board[c][r] = Piece.get(extract >> 3, extract & 0b111);
 			}
 		}
 		for (int c = 6; c < 8; c++)
@@ -127,7 +127,7 @@ public class CompressedGameBoard implements Serializable
 				int extract = (int) ((lst2c >>> getOffset(c - 6, r)) & 0b1111);
 				if (extract == 0b1111)
 					continue;
-				board.board[c][r] = Piece.allPieces[extract >> 3][extract & 0b111];
+				board.board[c][r] = Piece.get(extract >> 3, extract & 0b111);
 			}
 		}
 		board.currentColor = (flags >> CURRENT_PLAYER_FLAG) & 0b1;

@@ -29,7 +29,7 @@ public class MoveHelper
 	public static ArrayList<Move> getAllMoves4PieceWithoutValidation(GameBoard board, Position pos)
 	{
 		ArrayList<Move> moves = new ArrayList<>();
-		for (Position p : getReachablePosition(board, pos.col, pos.row, false))
+		for (Position p : getReachablePosition(board, pos.getColumn(), pos.getRow(), false))
 		{
 			moves.add(new Move(board, pos, p));
 		}
@@ -40,7 +40,7 @@ public class MoveHelper
 	{
 		ArrayList<Move> moves = new ArrayList<>();
 		Piece piece = board.getPiece(pos);
-		for (Position p : getReachablePosition(board, pos.col, pos.row, defend))
+		for (Position p : getReachablePosition(board, pos.getColumn(), pos.getRow(), defend))
 		{
 			Move m = new Move(board, pos, p);
 			board.apply(m);

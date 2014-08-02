@@ -28,9 +28,9 @@ public class Move implements Serializable
 			flags|=1<<KING_MOVED_FLAG;
 		}
 		if(startPiece.getType()==Piece.ROOK){
-			if(start.col==0&&!b.hasLRookMoved(startPiece.getColor())){
+			if(start.getColumn()==0&&!b.hasLRookMoved(startPiece.getColor())){
 				flags|=1<<L_ROOK_FLAG;
-			}else if(start.col==7&&!b.hasRRookMoved(startPiece.getColor())){
+			}else if(start.getColumn()==7&&!b.hasRRookMoved(startPiece.getColor())){
 				flags|=1<<R_ROOK_FLAG;
 			}
 		}

@@ -7,13 +7,17 @@ public class Piece implements Serializable
 {
 	private static final long serialVersionUID = -7958308764629834573L;
 	
-	public static Piece[][] allPieces=new Piece[2][6];
+	private static Piece[][] allPieces=new Piece[2][6];
 	public static final int	QUEEN = 1, KING = 0, ROOK = 2, KNIGHT = 3, BISHOP = 4, PAWN = 5;
 	public static final int	BLACK=0, WHITE=1;
-	public static final String[] NAMES={"King", "Queen", "Rook", "Knight", "Bishop", "Pawn"};
+	private static final String[] NAMES={"King", "Queen", "Rook", "Knight", "Bishop", "Pawn"};
 	
 	public static int getOppositeColor(int color){
 		return 1-color;
+	}
+	
+	public static Piece get(int color, int piece){
+		return allPieces[color][piece];
 	}
 	
 	static{
