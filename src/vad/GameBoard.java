@@ -2,6 +2,8 @@ package vad;
 
 import java.util.ArrayList;
 
+import com.nwgjb.commons.util.BitField;
+
 /**
  * Game board data structure. Provide a lot of helper functions. Do not transfer
  * this in networking because in Java, object streams will cache transferred
@@ -245,10 +247,10 @@ public class GameBoard
 	{
 		if (color == Piece.BLACK)
 		{
-			return (blackFlags & (1 << KING_MOVED_FLAG)) != 0;
+			return BitField.getBit(blackFlags, KING_MOVED_FLAG);
 		} else
 		{
-			return (whiteFlags & (1 << KING_MOVED_FLAG)) != 0;
+			return BitField.getBit(whiteFlags, KING_MOVED_FLAG);
 		}
 	}
 
@@ -256,10 +258,10 @@ public class GameBoard
 	{
 		if (color == Piece.BLACK)
 		{
-			return (blackFlags & (1 << L_ROOK_FLAG)) != 0;
+			return BitField.getBit(blackFlags, L_ROOK_FLAG);
 		} else
 		{
-			return (whiteFlags & (1 << L_ROOK_FLAG)) != 0;
+			return BitField.getBit(whiteFlags, L_ROOK_FLAG);
 		}
 	}
 
@@ -267,10 +269,10 @@ public class GameBoard
 	{
 		if (color == Piece.BLACK)
 		{
-			return (blackFlags & (1 << R_ROOK_FLAG)) != 0;
+			return BitField.getBit(blackFlags, R_ROOK_FLAG);
 		} else
 		{
-			return (whiteFlags & (1 << R_ROOK_FLAG)) != 0;
+			return BitField.getBit(whiteFlags, R_ROOK_FLAG);
 		}
 	}
 
@@ -278,16 +280,10 @@ public class GameBoard
 	{
 		if (color == Piece.BLACK)
 		{
-			if (moved)
-				blackFlags |= (1 << KING_MOVED_FLAG);
-			else
-				blackFlags &= ~(1 << KING_MOVED_FLAG);
+			blackFlags=(byte) BitField.changeBit(blackFlags, KING_MOVED_FLAG, moved);
 		} else
 		{
-			if (moved)
-				whiteFlags |= (1 << KING_MOVED_FLAG);
-			else
-				whiteFlags &= ~(1 << KING_MOVED_FLAG);
+			whiteFlags=(byte) BitField.changeBit(whiteFlags, KING_MOVED_FLAG, moved);
 		}
 	}
 
@@ -295,16 +291,10 @@ public class GameBoard
 	{
 		if (color == Piece.BLACK)
 		{
-			if (moved)
-				blackFlags |= (1 << L_ROOK_FLAG);
-			else
-				blackFlags &= ~(1 << L_ROOK_FLAG);
+			blackFlags=(byte) BitField.changeBit(blackFlags, L_ROOK_FLAG, moved);
 		} else
 		{
-			if (moved)
-				whiteFlags |= (1 << L_ROOK_FLAG);
-			else
-				whiteFlags &= ~(1 << L_ROOK_FLAG);
+			whiteFlags=(byte) BitField.changeBit(whiteFlags, L_ROOK_FLAG, moved);
 		}
 	}
 
@@ -312,16 +302,10 @@ public class GameBoard
 	{
 		if (color == Piece.BLACK)
 		{
-			if (moved)
-				blackFlags |= (1 << R_ROOK_FLAG);
-			else
-				blackFlags &= ~(1 << R_ROOK_FLAG);
+			blackFlags=(byte) BitField.changeBit(blackFlags, R_ROOK_FLAG, moved);
 		} else
 		{
-			if (moved)
-				whiteFlags |= (1 << R_ROOK_FLAG);
-			else
-				whiteFlags &= ~(1 << R_ROOK_FLAG);
+			whiteFlags=(byte) BitField.changeBit(whiteFlags, R_ROOK_FLAG, moved);
 		}
 	}
 }

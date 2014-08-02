@@ -363,6 +363,7 @@ public class MoveHelper
 	{
 		if (board.hasKingMoved(color) || board.hasLRookMoved(color))
 			return false;
+
 		if (board.isEmpty(Position.get(col - 1, row)) && board.isEmpty(Position.get(col - 2, row))
 				&& board.isEmpty(Position.get(col - 3, row))
 				&& !isUnderAttack(board, Position.get(col, row), Piece.getOppositeColor(color))
@@ -378,19 +379,18 @@ public class MoveHelper
 
 	public static boolean canCastleRight(GameBoard board, int color, int col, int row)
 	{
-		if (!board.hasKingMoved(color))
+		if (board.hasKingMoved(color) || board.hasRRookMoved(color))
+			return false;
+		
+		if (board.isEmpty(Position.get(col + 1, row)) && board.isEmpty(Position.get(col + 2, row))
+				&& !isUnderAttack(board, Position.get(col, row), Piece.getOppositeColor(color))
+				&& !isUnderAttack(board, Position.get(col + 1, row), Piece.getOppositeColor(color)))
 		{
-			if (!board.hasRRookMoved(color))
-			{
-				if (board.isEmpty(Position.get(col + 1, row)) && board.isEmpty(Position.get(col + 2, row))
-						&& !isUnderAttack(board, Position.get(col, row), Piece.getOppositeColor(color))
-						&& !isUnderAttack(board, Position.get(col + 1, row), Piece.getOppositeColor(color)))
-				{
-					return true;
-				}
-			}
+			return true;
+		} else
+		{
+			return false;
 		}
-		return false;
 	}
 
 	private static ArrayList<Position> getReachableKingPosition(GameBoard board, Piece piece, int col, int row, boolean defend)

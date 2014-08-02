@@ -2,6 +2,8 @@ package vad;
 
 import java.io.Serializable;
 
+import com.nwgjb.commons.util.BitField;
+
 public class Move implements Serializable
 {
 	private static final long serialVersionUID = 8443779978202842017L;
@@ -25,13 +27,15 @@ public class Move implements Serializable
 		killedPiece=b.getPiece(dest);
 		
 		if(startPiece.getType()==Piece.KING&&!b.hasKingMoved(startPiece.getColor())){
-			flags|=1<<KING_MOVED_FLAG;
+			flags=(byte)BitField.setBit(flags, KING_MOVED_FLAG);
 		}
 		if(startPiece.getType()==Piece.ROOK){
 			if(start.getColumn()==0&&!b.hasLRookMoved(startPiece.getColor())){
-				flags|=1<<L_ROOK_FLAG;
-			}else if(start.getColumn()==7&&!b.hasRRookMoved(startPiece.getColor())){
-				flags|=1<<R_ROOK_FLAG;
+				//TODO Check whether it's the bottom line
+				//TODO We need to set L_ROOK_FLAG if l rook is killed
+				flags=(byte)BitField.setBit(flags, L_ROOK_FLAG);
+			}else if(start.getColumn()==7&&start.getRow()==0&&!b.hasRRookMoved(startPiece.getColor())){
+				flags=(byte)BitField.setBit(flags, R_ROOK_FLAG);
 			}
 		}
 	}
@@ -56,16 +60,16 @@ public class Move implements Serializable
 
 	public boolean isFirstKingMove()
 	{
-		return (flags&(1<<KING_MOVED_FLAG))!=0;
+		return BitField.getBit(flags, KING_MOVED_FLAG);
 	}
 	
 	public boolean isFirstLRookMove()
 	{
-		return (flags&(1<<L_ROOK_FLAG))!=0;
+		return BitField.getBit(flags, L_ROOK_FLAG);
 	}
 	
 	public boolean isFirstRRookMove()
 	{
-		return (flags&(1<<R_ROOK_FLAG))!=0;
+		return BitField.getBit(flags, R_ROOK_FLAG);
 	}
 }
