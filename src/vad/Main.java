@@ -56,7 +56,7 @@ public class Main
 			socket.close();
 		} else
 		{
-			p2 = new AIPlayer(Piece.BLACK);
+			p2 = new UserPlayer(Piece.BLACK);
 		}
 		startGame(p1, p2);
 	}
