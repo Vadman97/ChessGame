@@ -9,16 +9,15 @@ import javax.swing.JButton;
 @SuppressWarnings("serial")
 public class PieceButton extends JButton
 {
-	Piece	piece;
+	Piece piece;
 	Position pos;
-	Color	blank;
+	Color blank;
 
-	
-	boolean	dirty	= false;
+	boolean dirty = false;
 
 	public PieceButton(Position pos)
 	{
-		this.pos=pos;
+		this.pos = pos;
 		this.blank = (pos.getColumn() + pos.getRow()) % 2 == 1 ? Color.BLACK : Color.WHITE;
 		setBackground(blank);
 	}
@@ -33,11 +32,14 @@ public class PieceButton extends JButton
 	{
 		return piece;
 	}
-	
-	public void markReachable(boolean b){
-		if(b==true){
+
+	public void markReachable(boolean b)
+	{
+		if (b == true)
+		{
 			setBackground(Color.GREEN);
-		}else{
+		} else
+		{
 			setBackground(blank);
 		}
 	}
@@ -55,8 +57,7 @@ public class PieceButton extends JButton
 			if (piece == null)
 			{
 				this.setIcon(null);
-			}
-			else
+			} else
 			{
 				this.setIcon(ChessGUI.CHESS_PIECE_IMAGES[piece.getColor()][piece.getType()]);
 			}
@@ -66,7 +67,7 @@ public class PieceButton extends JButton
 
 	public boolean isReachable()
 	{
-		return getBackground()==Color.GREEN;
+		return getBackground() == Color.GREEN;
 	}
 
 	public Position getPosition()
