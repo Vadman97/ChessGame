@@ -128,7 +128,7 @@ public class AIPlayer implements Player
 			boolean columnHasPawnE = false;
 			for (int j = 0; j < 8; j++)
 			{
-				if (board.isEmpty(i, j))
+				if (board.isEmpty(Position.get(i, j)))
 					continue;
 				Piece p = board.getPiece(Position.get(i, j));
 

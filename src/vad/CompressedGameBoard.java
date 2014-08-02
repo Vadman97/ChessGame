@@ -19,7 +19,7 @@ public class CompressedGameBoard
 			for (int r = 0; r < 8; r++)
 			{
 				int offset = getOffset(c, r);
-				if (!b.isEmpty(c, r))
+				if (!b.isEmpty(Position.get(c, r)))
 					fst2c |= getPieceNum(b, c, r) << offset;
 				else
 					fst2c |= 0b1111l << offset;
@@ -30,7 +30,7 @@ public class CompressedGameBoard
 			for (int r = 0; r < 8; r++)
 			{
 				int offset = getOffset(c - 2, r);
-				if (!b.isEmpty(c, r))
+				if (!b.isEmpty(Position.get(c, r)))
 					snd2c |= getPieceNum(b, c, r) << offset;
 				else
 					snd2c |= 0b1111l << offset;
@@ -41,7 +41,7 @@ public class CompressedGameBoard
 			for (int r = 0; r < 8; r++)
 			{
 				int offset = getOffset(c - 4, r);
-				if (!b.isEmpty(c, r))
+				if (!b.isEmpty(Position.get(c, r)))
 					trd2c |= getPieceNum(b, c, r) << offset;
 				else
 					trd2c |= 0b1111l << offset;
@@ -52,7 +52,7 @@ public class CompressedGameBoard
 			for (int r = 0; r < 8; r++)
 			{
 				int offset = getOffset(c - 6, r);
-				if (!b.isEmpty(c, r))
+				if (!b.isEmpty(Position.get(c, r)))
 					lst2c |= getPieceNum(b, c, r) << offset;
 				else
 					lst2c |= 0b1111l << offset;

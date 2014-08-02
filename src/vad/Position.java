@@ -3,15 +3,28 @@ package vad;
 public class Position
 {
 	private static final Position[][] positions = new Position[8][8];
+	private static final Position[] allPositions = new Position[64];
+
 	static
 	{
+		int i = 0;
 		for (int r = 0; r < 8; r++)
 		{
 			for (int c = 0; c < 8; c++)
 			{
-				positions[c][r] = new Position(c, r);
+				allPositions[i++] = positions[c][r] = new Position(c, r);
 			}
 		}
+	}
+
+	public static Position get(int col, int row)
+	{
+		return positions[col][row];
+	}
+
+	public static Position[] all()
+	{
+		return allPositions;
 	}
 
 	int col, row;
@@ -20,11 +33,6 @@ public class Position
 	{
 		this.col = col;
 		this.row = row;
-	}
-
-	public static Position get(int col, int row)
-	{
-		return positions[col][row];
 	}
 
 	public int getColumn()
@@ -98,12 +106,13 @@ public class Position
 			return null;
 		return get(col + 1, row + 1);
 	}
-	
+
 	public Position getRelative(int dc, int dr)
 	{
-		int c=col+dc;
-		int r=row+dr;
-		if(c<0||c>7||r<0||r>7){
+		int c = col + dc;
+		int r = row + dr;
+		if (c < 0 || c > 7 || r < 0 || r > 7)
+		{
 			return null;
 		}
 		return get(c, r);
