@@ -22,6 +22,8 @@ public class Main
 		}
 	}
 
+	static final boolean NETWORKING = false;
+
 	public static void startGame(Player p1, Player p2)
 	{
 		GameBoard board = new GameBoard();
@@ -30,12 +32,12 @@ public class Main
 
 			if (board.currentColor == Piece.WHITE)
 			{
-				CompressedGameBoard b=new CompressedGameBoard(board);
+				CompressedGameBoard b = new CompressedGameBoard(board);
 				p2.update(b);
 				board.apply(p1.makeMove(b));
 			} else
 			{
-				CompressedGameBoard b=new CompressedGameBoard(board);
+				CompressedGameBoard b = new CompressedGameBoard(board);
 				p1.update(b);
 				board.apply(p2.makeMove(b));
 			}
@@ -45,10 +47,17 @@ public class Main
 
 	public static void main(String[] args) throws IOException
 	{
-		ServerSocket socket = new ServerSocket(12345);
-		Player p1 =((ClientPlayerFactory) new RMIConnection(socket.accept()).getBind()).create(Piece.WHITE);
-		Player p2 = ((ClientPlayerFactory) new RMIConnection(socket.accept()).getBind()).create(Piece.BLACK);
-		socket.close();
+		Player p1 = new UserPlayer(Piece.WHITE);
+		Player p2;
+		if (NETWORKING)
+		{
+			ServerSocket socket = new ServerSocket(12345);
+			p2 = ((ClientPlayerFactory) new RMIConnection(socket.accept()).getBind()).create(Piece.BLACK);
+			socket.close();
+		} else
+		{
+			p2 = new AIPlayer(Piece.BLACK);
+		}
 		startGame(p1, p2);
 	}
 }

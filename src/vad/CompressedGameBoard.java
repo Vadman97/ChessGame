@@ -6,6 +6,8 @@ import java.io.Serializable;
  * Compressed Game Board, not efficient in searching or mutating (maybe), but is
  * very tiny and thus useful in transposition table and networking.
  * 
+ * TODO maybe we can do all things in compressed game board
+ * 
  * @author Gary Guo
  *
  */
