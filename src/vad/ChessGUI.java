@@ -20,9 +20,9 @@ public class ChessGUI extends JFrame implements ActionListener
 		void onClick(Position position);
 	}
 
-	PieceButton[][]						buttons				= new PieceButton[8][8];
+	PieceButton[][] buttons = new PieceButton[8][8];
 
-	public static final ImageIcon[][]	CHESS_PIECE_IMAGES	= new ImageIcon[2][6];
+	public static final ImageIcon[][] CHESS_PIECE_IMAGES = new ImageIcon[2][6];
 	static
 	{
 		try
@@ -32,28 +32,42 @@ public class ChessGUI extends JFrame implements ActionListener
 			for (int color = 0; color < 2; color++)
 				for (int type = 0; type < 6; type++)
 					CHESS_PIECE_IMAGES[color][type] = new ImageIcon(bi.getSubimage(type * 64, color * 64, 64, 64));
-		}
-		catch (Exception e)
+		} catch (Exception e)
 		{
 			e.printStackTrace();
 			System.exit(1);
 		}
 	}
 
-	ClickListener						onClick;
+	ClickListener onClick;
 
-	public ChessGUI(ClickListener onClick)
+	public ChessGUI(ClickListener onClick, int color)
 	{
 		JPanel gameBoard = new JPanel();
 		gameBoard.setLayout(new GridLayout(8, 8));
-		for (int row = 0; row < 8; row++)
+		if (color == Piece.WHITE)
 		{
-			for (int col = 0; col < 8; col++)
+			for (int row = 0; row < 8; row++)
 			{
-				final PieceButton b = new PieceButton(Position.get(col, row));
-				buttons[col][row] = b;
-				b.addActionListener(this);
-				gameBoard.add(b);
+				for (int col = 0; col < 8; col++)
+				{
+					PieceButton b = new PieceButton(Position.get(col, row));
+					buttons[col][row] = b;
+					b.addActionListener(this);
+					gameBoard.add(b);
+				}
+			}
+		} else
+		{
+			for (int row = 7; row >= 0; row--)
+			{
+				for (int col = 7; col >= 0; col--)
+				{
+					PieceButton b = new PieceButton(Position.get(col, row));
+					buttons[col][row] = b;
+					b.addActionListener(this);
+					gameBoard.add(b);
+				}
 			}
 		}
 
@@ -103,7 +117,7 @@ public class ChessGUI extends JFrame implements ActionListener
 		}
 	}
 
-	PieceButton	selectedbutton;
+	PieceButton selectedbutton;
 
 	@Override
 	public void actionPerformed(ActionEvent e)
