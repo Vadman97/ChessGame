@@ -132,7 +132,7 @@ public class CompressedGameBoard implements Serializable
 		}
 		board.currentColor = (flags >> CURRENT_PLAYER_FLAG) & 0b1;
 		board.blackFlags = (byte) ((flags >> BLACK_FLAG_LOW) & 0b111);
-		board.whiteFlags = (byte) ((flags >> BLACK_FLAG_LOW) & 0b111);
+		board.whiteFlags = (byte) ((flags >> WHITE_FLAG_LOW) & 0b111);
 		return board;
 	}
 
