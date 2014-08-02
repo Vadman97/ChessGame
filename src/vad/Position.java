@@ -1,7 +1,11 @@
 package vad;
 
-public class Position
+import java.io.Serializable;
+
+public class Position implements Serializable
 {
+	private static final long serialVersionUID = -4029933612261284275L;
+	
 	private static final Position[][] positions = new Position[8][8];
 	private static final Position[] allPositions = new Position[64];
 
@@ -117,4 +121,24 @@ public class Position
 		}
 		return get(c, r);
 	}
+	
+	private static class PositionReference implements Serializable{
+		private static final long serialVersionUID = 1439457913793333450L;
+		
+		private int col;
+		private int row;
+		public PositionReference(Position p){
+			col=p.col;
+			row=p.row;
+		}
+		
+		private Object readResolve(){
+			return Position.positions[col][row];
+		}
+	}
+
+	private Object writeReplace(){
+		return new PositionReference(this);
+	}
+	
 }

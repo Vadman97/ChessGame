@@ -27,8 +27,9 @@ public class AIPlayer implements Player
 	}
 
 	@Override
-	public Move makeMove(GameBoard board)
+	public Move makeMove(CompressedGameBoard cpdboard)
 	{
+		GameBoard board=cpdboard.getGameBoard();
 		realBoard = board;
 		long start = System.currentTimeMillis();
 		Move move = getBestMove(board, depth);
@@ -38,6 +39,11 @@ public class AIPlayer implements Player
 	}
 
 	@Override
+	public void update(CompressedGameBoard board)
+	{
+		update(board.getGameBoard());
+	}
+	
 	public void update(GameBoard board)
 	{
 		if (UI_ENABLED)

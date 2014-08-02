@@ -2,6 +2,16 @@ package vad;
 
 import java.util.ArrayList;
 
+/**
+ * Game board data structure. Provide a lot of helper functions. Do not transfer
+ * this in networking because in Java, object streams will cache transferred
+ * object. Since we only have one game board instance, do not pass this as an
+ * argument, but you can use this class freely if you are sure that this class
+ * will only be used locally.
+ * 
+ * @author Gary Guo, Vadim Korolik
+ *
+ */
 public class GameBoard
 {
 	Piece[][] board;

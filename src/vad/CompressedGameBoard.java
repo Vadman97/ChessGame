@@ -1,7 +1,18 @@
 package vad;
 
-public class CompressedGameBoard
+import java.io.Serializable;
+
+/**
+ * Compressed Game Board, not efficient in searching or mutating (maybe), but is
+ * very tiny and thus useful in transposition table and networking.
+ * 
+ * @author Gary Guo
+ *
+ */
+public class CompressedGameBoard implements Serializable
 {
+	private static final long serialVersionUID = 8167276742376745392L;
+
 	long fst2c;
 	long snd2c;
 	long trd2c;
