@@ -17,7 +17,7 @@ public class MoveHelper
 		case Piece.BISHOP:
 			return getReachableBishopPosition(board, p, col, row, defend);
 		case Piece.KING:
-			return getReachableKingPosition(board, col, row, defend);
+			return getReachableKingPosition(board, p, col, row, defend);
 		case Piece.QUEEN:
 			return getReachableQueenPosition(board, p, col, row, defend);
 		default:
@@ -50,6 +50,8 @@ public class MoveHelper
 		}
 		return moves;
 	}
+	
+	/* getReachablePosition Method Groups */
 
 	/**
 	 * Get all one step reachable points of a rook, which includes a position
@@ -190,11 +192,47 @@ public class MoveHelper
 		getReachableBishopPosition(list, board, position);
 	}
 	
-	private static void getReachableKingPosition(List<Position> list, GameBoard board, Position position)
+	/**
+	 * Get all one step reachable points of a king, which includes a position
+	 * that is occupied by friend but protected. While castling is not counted
+	 * in the reachable position.
+	 * 
+	 * @param list
+	 *            List to put positions in
+	 * @param board
+	 *            Current game board
+	 * @param position
+	 *            Position of the given piece
+	 */
+	public static void getReachableKingPosition(List<Position> list, GameBoard board, Position position)
 	{
-		/* Queen acts like a rook and a bishop combined */
-		getReachableRookPosition(list, board, position);
-		getReachableBishopPosition(list, board, position);
+		/* Check every 1, 1 offset combinations */
+		Position pos;
+		pos = position.getUpLeft();
+		if (pos != null)
+			list.add(pos);
+		pos = position.getUp();
+		if (pos != null)
+			list.add(pos);
+		pos = position.getUpRight();
+		if (pos != null)
+			list.add(pos);
+		pos = position.getRight();
+		if (pos != null)
+			list.add(pos);
+		pos = position.getDownRight();
+		if (pos != null)
+			list.add(pos);
+		pos = position.getDown();
+		if (pos != null)
+			list.add(pos);
+		pos = position.getDownLeft();
+		if (pos != null)
+			list.add(pos);
+		pos = position.getLeft();
+		if (pos != null)
+			list.add(pos);
+		
 	}
 
 	/**
@@ -259,12 +297,14 @@ public class MoveHelper
 		}
 	}
 
+	/* End getReachablePosition Method Groups */
+	
 	@Deprecated
 	private static ArrayList<Position> getReachableRookPosition(GameBoard board, Piece piece, int col, int row, boolean defend)
 	{
 		ArrayList<Position> position = new ArrayList<>();
 		getReachableRookPosition(position, board, Position.get(col, row));
-		if (defend)
+		if (!defend)
 		{
 			for (int i = 0; i < position.size(); i++)
 			{
@@ -354,39 +394,31 @@ public class MoveHelper
 		return false;
 	}
 
-	private static ArrayList<Position> getReachableKingPosition(GameBoard board, int col, int row, boolean defend)
+	private static ArrayList<Position> getReachableKingPosition(GameBoard board, Piece piece, int col, int row, boolean defend)
 	{
 		ArrayList<Position> position = new ArrayList<>();
-		Piece p = board.board[col][row];
-		checkFreeOrEatAndAdd(board.board, position, col - 1, row - 1, p);
-		checkFreeOrEatAndAdd(board.board, position, col - 1, row + 1, p);
-		checkFreeOrEatAndAdd(board.board, position, col + 1, row - 1, p);
-		checkFreeOrEatAndAdd(board.board, position, col + 1, row + 1, p);
-		checkFreeOrEatAndAdd(board.board, position, col + 1, row, p);
-		checkFreeOrEatAndAdd(board.board, position, col - 1, row, p);
-		checkFreeOrEatAndAdd(board.board, position, col, row - 1, p);
-		checkFreeOrEatAndAdd(board.board, position, col, row + 1, p);
-
-		if (canCastleLeft(board, p.getColor(), col, row))
+		getReachableKingPosition(position, board, Position.get(col, row));
+		if (!defend)
+		{
+			for (int i = 0; i < position.size(); i++)
+			{
+				Piece p = board.getPiece(position.get(i));
+				if (p != null && p.getColor() == piece.getColor())
+				{
+					position.remove(i);
+					i--;
+				}
+			}
+		}
+		if (canCastleLeft(board, piece.getColor(), col, row))
 		{
 			position.add(Position.get(col - 3, row));
 		}
-		if (canCastleRight(board, p.getColor(), col, row))
+		if (canCastleRight(board, piece.getColor(), col, row))
 		{
 			position.add(Position.get(col + 2, row));
 		}
 
-		if (defend)
-		{
-			checkDefend(board.board, position, col - 1, row - 1, p);
-			checkDefend(board.board, position, col - 1, row + 1, p);
-			checkDefend(board.board, position, col + 1, row - 1, p);
-			checkDefend(board.board, position, col + 1, row + 1, p);
-			checkDefend(board.board, position, col + 1, row, p);
-			checkDefend(board.board, position, col - 1, row, p);
-			checkDefend(board.board, position, col, row - 1, p);
-			checkDefend(board.board, position, col, row + 1, p);
-		}
 		return position;
 	}
 
@@ -398,6 +430,7 @@ public class MoveHelper
 		return position;
 	}
 
+	@Deprecated
 	private static ArrayList<Position> getReachablePawnPosition(GameBoard board, Piece piece, int col, int row, boolean defend)
 	{
 		ArrayList<Position> position = new ArrayList<>();
@@ -582,5 +615,6 @@ public class MoveHelper
 		}
 		return false;
 	}
+	
 
 }
