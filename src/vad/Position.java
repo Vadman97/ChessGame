@@ -2,7 +2,7 @@ package vad;
 
 public class Position
 {
-	private static final Position[][]	positions	= new Position[8][8];
+	private static final Position[][] positions = new Position[8][8];
 	static
 	{
 		for (int r = 0; r < 8; r++)
@@ -14,7 +14,7 @@ public class Position
 		}
 	}
 
-	int									col, row;
+	int col, row;
 
 	private Position(int col, int row)
 	{
@@ -37,6 +37,7 @@ public class Position
 		return row;
 	}
 
+	@Override
 	public String toString()
 	{
 		return "[" + col + ", " + row + "]";
@@ -49,9 +50,52 @@ public class Position
 		return get(col + 1, row);
 	}
 
-	public Position getLeft() {
+	public Position getLeft()
+	{
 		if (col == 0)
 			return null;
 		return get(col - 1, row);
+	}
+
+	public Position getUp()
+	{
+		if (row == 0)
+			return null;
+		return get(col, row - 1);
+	}
+
+	public Position getDown()
+	{
+		if (row == 7)
+			return null;
+		return get(col, row + 1);
+	}
+
+	public Position getUpLeft()
+	{
+		if (row == 0 || col == 0)
+			return null;
+		return get(col - 1, row - 1);
+	}
+
+	public Position getUpRight()
+	{
+		if (row == 0 || col == 7)
+			return null;
+		return get(col + 1, row - 1);
+	}
+
+	public Position getDownLeft()
+	{
+		if (row == 7 || col == 0)
+			return null;
+		return get(col - 1, row + 1);
+	}
+
+	public Position getDownRight()
+	{
+		if (row == 7 || col == 7)
+			return null;
+		return get(col + 1, row + 1);
 	}
 }

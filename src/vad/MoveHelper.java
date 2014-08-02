@@ -6,7 +6,7 @@ public class MoveHelper
 {
 	public static ArrayList<Position> getReachablePosition(GameBoard board, int col, int row, boolean defend)
 	{
-		Piece p = board.getPiece(col, row);
+		Piece p = board.getPiece(Position.get(col, row));
 		switch (p.getType())
 		{
 		case Piece.ROOK:
@@ -49,37 +49,47 @@ public class MoveHelper
 		}
 		return moves;
 	}
+	
+	private static void getReachableRookPosition(ArrayList<Position> list, GameBoard board, Piece piece, Position position)
+	{
+		for(Position current=position.getLeft(); current!=null; current=current.getLeft()){
+			list.add(current);
+			if(!board.isEmpty(current)){
+				break;
+			}
+		}
+		for(Position current=position.getRight(); current!=null; current=current.getRight()){
+			list.add(current);
+			if(!board.isEmpty(current)){
+				break;
+			}
+		}
+		for(Position current=position.getUp(); current!=null; current=current.getUp()){
+			list.add(current);
+			if(!board.isEmpty(current)){
+				break;
+			}
+		}
+		for(Position current=position.getDown(); current!=null; current=current.getDown()){
+			list.add(current);
+			if(!board.isEmpty(current)){
+				break;
+			}
+		}
+	}
 
 	private static ArrayList<Position> getReachableRookPosition(GameBoard board, Piece piece, int col, int row, boolean defend)
 	{
 		ArrayList<Position> position = new ArrayList<>();
-		for (int c = col - 1; c >= 0; c--)
-		{
-			if (defend)
-				checkDefend(board.board, position, c, row, piece);
-			if (!checkFreeOrEatAndAdd(board.board, position, c, row, piece))
-				break;
-		}
-		for (int c = col + 1; c < 8; c++)
-		{
-			if (defend)
-				checkDefend(board.board, position, c, row, piece);
-			if (!checkFreeOrEatAndAdd(board.board, position, c, row, piece))
-				break;
-		}
-		for (int r = row - 1; r >= 0; r--)
-		{
-			if (defend)
-				checkDefend(board.board, position, col, r, piece);
-			if (!checkFreeOrEatAndAdd(board.board, position, col, r, piece))
-				break;
-		}
-		for (int r = row + 1; r < 8; r++)
-		{
-			if (defend)
-				checkDefend(board.board, position, col, r, piece);
-			if (!checkFreeOrEatAndAdd(board.board, position, col, r, piece))
-				break;
+		getReachableRookPosition(position, board, piece, Position.get(col, row));
+		if(!defend){
+			for(int i=0;i<position.size();i++){
+				Piece p=board.getPiece(position.get(i));
+				if(p!=null&&p.getColor()==piece.getColor()){
+					position.remove(i);
+					i--;
+				}
+			}
 		}
 		return position;
 	}

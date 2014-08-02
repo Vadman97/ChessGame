@@ -33,10 +33,10 @@ public class GameBoard
 		board = new Piece[8][8];
 	}
 
-	public Piece getPiece(int col, int row)
+	/*public Piece getPiece(int col, int row)
 	{
 		return board[col][row];
-	}
+	}*/
 
 	public void removePiece(int column, int row)
 	{
@@ -55,7 +55,7 @@ public class GameBoard
 
 	public Piece getPiece(Position dest)
 	{
-		return getPiece(dest.col, dest.row);
+		return board[dest.col][dest.row];
 	}
 
 	public void setPiece(Position pos, Piece piece)
@@ -151,7 +151,7 @@ public class GameBoard
 			{
 				if (isEmpty(c, r))
 					continue;
-				if (getPiece(c, r).getColor() == color)
+				if (getPiece(Position.get(c, r)).getColor() == color)
 				{
 					moves.addAll(MoveHelper.getAllMoves4PieceWithoutValidation(this, Position.get(c, r)));
 				}
@@ -169,7 +169,7 @@ public class GameBoard
 			{
 				if (isEmpty(c, r))
 					continue;
-				if (getPiece(c, r).getColor() == color)
+				if (getPiece(Position.get(c, r)).getColor() == color)
 				{
 					moves.addAll(MoveHelper.getAllMoves4Piece(this, Position.get(c, r), false));
 				}
@@ -187,7 +187,7 @@ public class GameBoard
 			{
 				if (isEmpty(c, r))
 					continue;
-				if (getPiece(c, r).getColor() == color)
+				if (getPiece(Position.get(c, r)).getColor() == color)
 				{
 					moves.addAll(MoveHelper.getAllMoves4Piece(this, Position.get(c, r), true));
 				}
@@ -205,7 +205,7 @@ public class GameBoard
 			{
 				if (isEmpty(c, r))
 					continue;
-				if (getPiece(c, r).getColor() == color)
+				if (getPiece(Position.get(c, r)).getColor() == color)
 					count++;
 			}
 		}

@@ -21,7 +21,7 @@ public class Main
 	{
 		GameBoard board = new GameBoard();
 		Player p1 = new UserPlayer(Piece.WHITE);
-		Player p2 = new AIPlayer(Piece.BLACK);
+		Player p2 = new UserPlayer(Piece.BLACK);
 		//board=new CompressedGameBoard(board).getGameBoard();
 		p1.update(board);
 		p2.update(board);

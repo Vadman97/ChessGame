@@ -72,9 +72,9 @@ public class ChessGUI extends JFrame implements ActionListener
 		{
 			for (int col = 0; col < 8; col++)
 			{
-				if (buttons[col][row].getPiece() != board.getPiece(col, row))
+				if (buttons[col][row].getPiece() != board.getPiece(Position.get(col, row)))
 				{
-					buttons[col][row].setPiece(board.getPiece(col, row));
+					buttons[col][row].setPiece(board.getPiece(Position.get(col, row)));
 				}
 			}
 		}
