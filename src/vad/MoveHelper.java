@@ -21,7 +21,7 @@ public class MoveHelper
 		case Piece.QUEEN:
 			return getReachableQueenPosition(board, p, col, row, defend);
 		default:
-			return getReachablePawnPosition(board.board, col, row, defend);
+			return getReachablePawnPosition(board, p, col, row, defend);
 		}
 
 	}
@@ -64,37 +64,30 @@ public class MoveHelper
 	 */
 	public static void getReachableRookPosition(List<Position> list, GameBoard board, Position position)
 	{
+		/* Go left until the first piece that blocks, the rest are the same */
 		for (Position current = position.getLeft(); current != null; current = current.getLeft())
 		{
 			list.add(current);
 			if (!board.isEmpty(current))
-			{
 				break;
-			}
 		}
 		for (Position current = position.getRight(); current != null; current = current.getRight())
 		{
 			list.add(current);
 			if (!board.isEmpty(current))
-			{
 				break;
-			}
 		}
 		for (Position current = position.getUp(); current != null; current = current.getUp())
 		{
 			list.add(current);
 			if (!board.isEmpty(current))
-			{
 				break;
-			}
 		}
 		for (Position current = position.getDown(); current != null; current = current.getDown())
 		{
 			list.add(current);
 			if (!board.isEmpty(current))
-			{
 				break;
-			}
 		}
 	}
 
@@ -111,6 +104,7 @@ public class MoveHelper
 	 */
 	public static void getReachableKnightPosition(List<Position> list, GameBoard board, Position position)
 	{
+		/* Check every 2, 1 offset combinations */
 		Position pos;
 		pos = position.getRelative(-2, -1);
 		if (pos != null)
@@ -151,40 +145,33 @@ public class MoveHelper
 	 */
 	public static void getReachableBishopPosition(List<Position> list, GameBoard board, Position position)
 	{
+		/* Go up left until the first piece that blocks, the rest are the same */
 		for (Position current = position.getUpLeft(); current != null; current = current.getUpLeft())
 		{
 			list.add(current);
 			if (!board.isEmpty(current))
-			{
 				break;
-			}
 		}
 		for (Position current = position.getUpRight(); current != null; current = current.getUpRight())
 		{
 			list.add(current);
 			if (!board.isEmpty(current))
-			{
 				break;
-			}
 		}
 		for (Position current = position.getDownLeft(); current != null; current = current.getDownLeft())
 		{
 			list.add(current);
 			if (!board.isEmpty(current))
-			{
 				break;
-			}
 		}
 		for (Position current = position.getDownRight(); current != null; current = current.getDownRight())
 		{
 			list.add(current);
 			if (!board.isEmpty(current))
-			{
 				break;
-			}
 		}
 	}
-	
+
 	/**
 	 * Get all one step reachable points of a queen, which includes a position
 	 * that is occupied by friend but protected.
@@ -198,8 +185,78 @@ public class MoveHelper
 	 */
 	public static void getReachableQueenPosition(List<Position> list, GameBoard board, Position position)
 	{
+		/* Queen acts like a rook and a bishop combined */
 		getReachableRookPosition(list, board, position);
 		getReachableBishopPosition(list, board, position);
+	}
+	
+	private static void getReachableKingPosition(List<Position> list, GameBoard board, Position position)
+	{
+		/* Queen acts like a rook and a bishop combined */
+		getReachableRookPosition(list, board, position);
+		getReachableBishopPosition(list, board, position);
+	}
+
+	/**
+	 * Get all one step reachable points of a pawn, which includes a position
+	 * that is occupied by friend but protected. TODO en passant and promotion
+	 * is not supported
+	 * 
+	 * @param list
+	 *            List to put positions in
+	 * @param board
+	 *            Current game board
+	 * @param position
+	 *            Position of the given piece
+	 */
+	public static void getReachablePawnPosition(List<Position> list, GameBoard board, Position position)
+	{
+		/* The pawn is special, we need the color first */
+		int color = board.getPiece(position).getColor();
+		/* If it is white */
+		if (color == Piece.WHITE)
+		{
+			Position up = position.getUp();
+			/* We first check whether the first grid ahead is empty or not */
+			if (up != null && board.isEmpty(up))
+			{
+				list.add(up);
+				Position up2 = up.getUp();
+				/*
+				 * If the first grid ahead is empty, we are at the initial
+				 * position, we can move ahead and we don't check whether
+				 * up2==null or not, because up2 must be non-null
+				 */
+				if (position.getRow() == 6 && board.isEmpty(up2))
+					list.add(up2);
+			}
+			Position skew;
+			/* Check if we can kill pieces by move in diagonal */
+			skew = position.getUpLeft();
+			if (skew != null && !board.isEmpty(skew))
+				list.add(skew);
+			skew = position.getUpRight();
+			if (skew != null && !board.isEmpty(skew))
+				list.add(skew);
+		} else
+		{
+			/* Algorithm here is the same, but mirror in direction */
+			Position down = position.getDown();
+			if (down != null && board.isEmpty(down))
+			{
+				list.add(down);
+				Position down2 = down.getDown();
+				if (position.getRow() == 1 && board.isEmpty(down2))
+					list.add(down2);
+			}
+			Position skew;
+			skew = position.getDownLeft();
+			if (skew != null && !board.isEmpty(skew))
+				list.add(skew);
+			skew = position.getDownRight();
+			if (skew != null && !board.isEmpty(skew))
+				list.add(skew);
+		}
 	}
 
 	@Deprecated
@@ -207,7 +264,7 @@ public class MoveHelper
 	{
 		ArrayList<Position> position = new ArrayList<>();
 		getReachableRookPosition(position, board, Position.get(col, row));
-		if (!defend)
+		if (defend)
 		{
 			for (int i = 0; i < position.size(); i++)
 			{
@@ -341,39 +398,20 @@ public class MoveHelper
 		return position;
 	}
 
-	private static ArrayList<Position> getReachablePawnPosition(Piece[][] board, int col, int row, boolean defend)
+	private static ArrayList<Position> getReachablePawnPosition(GameBoard board, Piece piece, int col, int row, boolean defend)
 	{
 		ArrayList<Position> position = new ArrayList<>();
-		Piece p = board[col][row];
-		if (p.getColor() == Piece.BLACK)
+		getReachablePawnPosition(position, board, Position.get(col, row));
+		if (!defend)
 		{
-			checkEatAndAdd(board, position, col + 1, row + 1, p);
-			checkEatAndAdd(board, position, col - 1, row + 1, p);
-			if (defend)
+			for (int i = 0; i < position.size(); i++)
 			{
-				checkDefend(board, position, col + 1, row + 1, p);
-				checkDefend(board, position, col - 1, row + 1, p);
-			}
-			if (checkFree(board, col, row + 1))
-			{
-				position.add(Position.get(col, row + 1));
-				if (row == 1)
-					checkFreeAndAdd(board, position, col, row + 2);
-			}
-		} else
-		{
-			checkEatAndAdd(board, position, col + 1, row - 1, p);
-			checkEatAndAdd(board, position, col - 1, row - 1, p);
-			if (defend)
-			{
-				checkDefend(board, position, col + 1, row - 1, p);
-				checkDefend(board, position, col - 1, row - 1, p);
-			}
-			if (checkFree(board, col, row - 1))
-			{
-				position.add(Position.get(col, row - 1));
-				if (row == 6)
-					checkFreeAndAdd(board, position, col, row - 2);
+				Piece p = board.getPiece(position.get(i));
+				if (p != null && p.getColor() == piece.getColor())
+				{
+					position.remove(i);
+					i--;
+				}
 			}
 		}
 		return position;
@@ -544,4 +582,5 @@ public class MoveHelper
 		}
 		return false;
 	}
+
 }

@@ -39,4 +39,5 @@ Icon
 .metadata
 .metadata/
 
-*.class
+bin/*
+bin

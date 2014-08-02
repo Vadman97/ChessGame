@@ -4,7 +4,7 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
-import java.net.URL;
+import java.io.File;
 import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
@@ -27,8 +27,7 @@ public class ChessGUI extends JFrame implements ActionListener
 	{
 		try
 		{
-			URL url = new URL("http://i.stack.imgur.com/memI0.png");
-			BufferedImage bi = ImageIO.read(url);
+			BufferedImage bi = ImageIO.read(new File("pieces.png"));
 			for (int color = 0; color < 2; color++)
 				for (int type = 0; type < 6; type++)
 					CHESS_PIECE_IMAGES[color][type] = new ImageIcon(bi.getSubimage(type * 64, color * 64, 64, 64));
