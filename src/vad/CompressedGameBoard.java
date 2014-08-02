@@ -56,7 +56,7 @@ public class CompressedGameBoard
 	}
 	
 	public static long getPieceNum(GameBoard b, int c, int r){
-		Piece p=b.getPiece(c, r);
+		Piece p=b.getPiece(Position.get(c, r));
 		return (p.getColor()<<3)|p.getType();
 	}
 	

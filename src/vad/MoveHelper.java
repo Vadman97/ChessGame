@@ -6,7 +6,7 @@ public class MoveHelper
 {
 	public static ArrayList<Position> getReachablePosition(GameBoard board, int col, int row, boolean defend)
 	{
-		Piece p = board.getPiece(col, row);
+		Piece p = board.getPiece(Position.get(col, row));
 		switch (p.getType())
 		{
 		case Piece.ROOK:

@@ -130,7 +130,7 @@ public class AIPlayer implements Player
 			{
 				if (board.isEmpty(i, j))
 					continue;
-				Piece p = board.getPiece(i, j);
+				Piece p = board.getPiece(Position.get(i, j));
 
 				if (p.getColor() == playerColor) // piece of computer
 				{
