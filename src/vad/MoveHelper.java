@@ -381,7 +381,6 @@ public class MoveHelper
 	{
 		if (board.hasKingMoved(color) || board.hasRRookMoved(color))
 			return false;
-		
 		if (board.isEmpty(Position.get(col + 1, row)) && board.isEmpty(Position.get(col + 2, row))
 				&& !isUnderAttack(board, Position.get(col, row), Piece.getOppositeColor(color))
 				&& !isUnderAttack(board, Position.get(col + 1, row), Piece.getOppositeColor(color)))

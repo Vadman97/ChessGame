@@ -24,6 +24,7 @@ public class GameBoard
 	public static final int KING_MOVED_FLAG = 0;
 	public static final int L_ROOK_FLAG = 1;
 	public static final int R_ROOK_FLAG = 2;
+	//TODO three variables can be combined into two
 
 	public static final int[] STARTING_ROW =
 	{ Piece.ROOK, Piece.KNIGHT, Piece.BISHOP, Piece.QUEEN, Piece.KING, Piece.BISHOP, Piece.KNIGHT, Piece.ROOK };
