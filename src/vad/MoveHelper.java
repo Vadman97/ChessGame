@@ -1,6 +1,7 @@
 package vad;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class MoveHelper
 {
@@ -12,9 +13,9 @@ public class MoveHelper
 		case Piece.ROOK:
 			return getReachableRookPosition(board, p, col, row, defend);
 		case Piece.KNIGHT:
-			return getReachableKnightPosition(board.board, col, row, defend);
+			return getReachableKnightPosition(board, p, col, row, defend);
 		case Piece.BISHOP:
-			return getReachableBishopPosition(board.board, col, row, defend);
+			return getReachableBishopPosition(board, p, col, row, defend);
 		case Piece.KING:
 			return getReachableKingPosition(board, col, row, defend);
 		case Piece.QUEEN:
@@ -49,43 +50,170 @@ public class MoveHelper
 		}
 		return moves;
 	}
-	
-	private static void getReachableRookPosition(ArrayList<Position> list, GameBoard board, Piece piece, Position position)
+
+	/**
+	 * Get all one step reachable points of a rook, which includes a position
+	 * that is occupied by friend but protected.
+	 * 
+	 * @param list
+	 *            List to put positions in
+	 * @param board
+	 *            Current game board
+	 * @param position
+	 *            Position of the given piece
+	 */
+	public static void getReachableRookPosition(List<Position> list, GameBoard board, Position position)
 	{
-		for(Position current=position.getLeft(); current!=null; current=current.getLeft()){
+		for (Position current = position.getLeft(); current != null; current = current.getLeft())
+		{
 			list.add(current);
-			if(!board.isEmpty(current)){
+			if (!board.isEmpty(current))
+			{
 				break;
 			}
 		}
-		for(Position current=position.getRight(); current!=null; current=current.getRight()){
+		for (Position current = position.getRight(); current != null; current = current.getRight())
+		{
 			list.add(current);
-			if(!board.isEmpty(current)){
+			if (!board.isEmpty(current))
+			{
 				break;
 			}
 		}
-		for(Position current=position.getUp(); current!=null; current=current.getUp()){
+		for (Position current = position.getUp(); current != null; current = current.getUp())
+		{
 			list.add(current);
-			if(!board.isEmpty(current)){
+			if (!board.isEmpty(current))
+			{
 				break;
 			}
 		}
-		for(Position current=position.getDown(); current!=null; current=current.getDown()){
+		for (Position current = position.getDown(); current != null; current = current.getDown())
+		{
 			list.add(current);
-			if(!board.isEmpty(current)){
+			if (!board.isEmpty(current))
+			{
 				break;
 			}
 		}
 	}
 
+	/**
+	 * Get all one step reachable points of a knight, which includes a position
+	 * that is occupied by friend but protected.
+	 * 
+	 * @param list
+	 *            List to put positions in
+	 * @param board
+	 *            Current game board
+	 * @param position
+	 *            Position of the given piece
+	 */
+	public static void getReachableKnightPosition(List<Position> list, GameBoard board, Position position)
+	{
+		Position pos;
+		pos = position.getRelative(-2, -1);
+		if (pos != null)
+			list.add(pos);
+		pos = position.getRelative(-2, +1);
+		if (pos != null)
+			list.add(pos);
+		pos = position.getRelative(+2, -1);
+		if (pos != null)
+			list.add(pos);
+		pos = position.getRelative(+2, +1);
+		if (pos != null)
+			list.add(pos);
+		pos = position.getRelative(-1, -2);
+		if (pos != null)
+			list.add(pos);
+		pos = position.getRelative(-1, +2);
+		if (pos != null)
+			list.add(pos);
+		pos = position.getRelative(+1, -2);
+		if (pos != null)
+			list.add(pos);
+		pos = position.getRelative(+1, +2);
+		if (pos != null)
+			list.add(pos);
+	}
+
+	/**
+	 * Get all one step reachable points of a bishop, which includes a position
+	 * that is occupied by friend but protected.
+	 * 
+	 * @param list
+	 *            List to put positions in
+	 * @param board
+	 *            Current game board
+	 * @param position
+	 *            Position of the given piece
+	 */
+	public static void getReachableBishopPosition(List<Position> list, GameBoard board, Position position)
+	{
+		for (Position current = position.getUpLeft(); current != null; current = current.getUpLeft())
+		{
+			list.add(current);
+			if (!board.isEmpty(current))
+			{
+				break;
+			}
+		}
+		for (Position current = position.getUpRight(); current != null; current = current.getUpRight())
+		{
+			list.add(current);
+			if (!board.isEmpty(current))
+			{
+				break;
+			}
+		}
+		for (Position current = position.getDownLeft(); current != null; current = current.getDownLeft())
+		{
+			list.add(current);
+			if (!board.isEmpty(current))
+			{
+				break;
+			}
+		}
+		for (Position current = position.getDownRight(); current != null; current = current.getDownRight())
+		{
+			list.add(current);
+			if (!board.isEmpty(current))
+			{
+				break;
+			}
+		}
+	}
+	
+	/**
+	 * Get all one step reachable points of a queen, which includes a position
+	 * that is occupied by friend but protected.
+	 * 
+	 * @param list
+	 *            List to put positions in
+	 * @param board
+	 *            Current game board
+	 * @param position
+	 *            Position of the given piece
+	 */
+	public static void getReachableQueenPosition(List<Position> list, GameBoard board, Position position)
+	{
+		getReachableRookPosition(list, board, position);
+		getReachableBishopPosition(list, board, position);
+	}
+
+	@Deprecated
 	private static ArrayList<Position> getReachableRookPosition(GameBoard board, Piece piece, int col, int row, boolean defend)
 	{
 		ArrayList<Position> position = new ArrayList<>();
-		getReachableRookPosition(position, board, piece, Position.get(col, row));
-		if(!defend){
-			for(int i=0;i<position.size();i++){
-				Piece p=board.getPiece(position.get(i));
-				if(p!=null&&p.getColor()==piece.getColor()){
+		getReachableRookPosition(position, board, Position.get(col, row));
+		if (!defend)
+		{
+			for (int i = 0; i < position.size(); i++)
+			{
+				Piece p = board.getPiece(position.get(i));
+				if (p != null && p.getColor() == piece.getColor())
+				{
 					position.remove(i);
 					i--;
 				}
@@ -94,65 +222,42 @@ public class MoveHelper
 		return position;
 	}
 
-	private static ArrayList<Position> getReachableKnightPosition(Piece[][] board, int col, int row, boolean defend)
+	@Deprecated
+	private static ArrayList<Position> getReachableKnightPosition(GameBoard board, Piece piece, int col, int row, boolean defend)
 	{
 		ArrayList<Position> position = new ArrayList<>();
-		Piece p = board[col][row];
-
-		checkFreeOrEatAndAdd(board, position, col - 2, row - 1, p);
-		checkFreeOrEatAndAdd(board, position, col - 2, row + 1, p);
-		checkFreeOrEatAndAdd(board, position, col + 2, row - 1, p);
-		checkFreeOrEatAndAdd(board, position, col + 2, row + 1, p);
-		checkFreeOrEatAndAdd(board, position, col - 1, row - 2, p);
-		checkFreeOrEatAndAdd(board, position, col - 1, row + 2, p);
-		checkFreeOrEatAndAdd(board, position, col + 1, row - 2, p);
-		checkFreeOrEatAndAdd(board, position, col + 1, row + 2, p);
-
-		if (defend)
+		getReachableKnightPosition(position, board, Position.get(col, row));
+		if (!defend)
 		{
-			checkDefend(board, position, col - 2, row - 1, p);
-			checkDefend(board, position, col - 2, row + 1, p);
-			checkDefend(board, position, col + 2, row - 1, p);
-			checkDefend(board, position, col + 2, row + 1, p);
-			checkDefend(board, position, col - 1, row - 2, p);
-			checkDefend(board, position, col - 1, row + 2, p);
-			checkDefend(board, position, col + 1, row - 2, p);
-			checkDefend(board, position, col + 1, row + 2, p);
+			for (int i = 0; i < position.size(); i++)
+			{
+				Piece p = board.getPiece(position.get(i));
+				if (p != null && p.getColor() == piece.getColor())
+				{
+					position.remove(i);
+					i--;
+				}
+			}
 		}
 		return position;
 	}
 
-	private static ArrayList<Position> getReachableBishopPosition(Piece[][] board, int col, int row, boolean defend)
+	@Deprecated
+	private static ArrayList<Position> getReachableBishopPosition(GameBoard board, Piece piece, int col, int row, boolean defend)
 	{
 		ArrayList<Position> position = new ArrayList<>();
-		Piece p = board[col][row];
-		for (int i = 1;; i++)
+		getReachableBishopPosition(position, board, Position.get(col, row));
+		if (!defend)
 		{
-			if (defend)
-				checkDefend(board, position, col + i, row + i, p);
-			if (!checkFreeOrEatAndAdd(board, position, col + i, row + i, p))
-				break;
-		}
-		for (int i = 1;; i++)
-		{
-			if (defend)
-				checkDefend(board, position, col - i, row + i, p);
-			if (!checkFreeOrEatAndAdd(board, position, col - i, row + i, p))
-				break;
-		}
-		for (int i = 1;; i++)
-		{
-			if (defend)
-				checkDefend(board, position, col - i, row - i, p);
-			if (!checkFreeOrEatAndAdd(board, position, col - i, row - i, p))
-				break;
-		}
-		for (int i = 1;; i++)
-		{
-			if (defend)
-				checkDefend(board, position, col + i, row - i, p);
-			if (!checkFreeOrEatAndAdd(board, position, col + i, row - i, p))
-				break;
+			for (int i = 0; i < position.size(); i++)
+			{
+				Piece p = board.getPiece(position.get(i));
+				if (p != null && p.getColor() == piece.getColor())
+				{
+					position.remove(i);
+					i--;
+				}
+			}
 		}
 		return position;
 	}
@@ -164,7 +269,8 @@ public class MoveHelper
 			if (!board.hasLRookMoved(color))
 			{
 				if (board.isEmpty(col - 1, row) && board.isEmpty(col - 2, row) && board.isEmpty(col - 3, row)
-						&& !isUnderAttack(board, Position.get(col, row), Piece.getOppositeColor(color)) && !isUnderAttack(board, Position.get(col - 1, row), Piece.getOppositeColor(color))
+						&& !isUnderAttack(board, Position.get(col, row), Piece.getOppositeColor(color))
+						&& !isUnderAttack(board, Position.get(col - 1, row), Piece.getOppositeColor(color))
 						&& !isUnderAttack(board, Position.get(col - 2, row), Piece.getOppositeColor(color)))
 				{
 					return true;
@@ -180,7 +286,8 @@ public class MoveHelper
 		{
 			if (!board.hasRRookMoved(color))
 			{
-				if (board.isEmpty(col + 1, row) && board.isEmpty(col + 2, row) && !isUnderAttack(board, Position.get(col, row), Piece.getOppositeColor(color))
+				if (board.isEmpty(col + 1, row) && board.isEmpty(col + 2, row)
+						&& !isUnderAttack(board, Position.get(col, row), Piece.getOppositeColor(color))
 						&& !isUnderAttack(board, Position.get(col + 1, row), Piece.getOppositeColor(color)))
 				{
 					return true;
@@ -226,10 +333,11 @@ public class MoveHelper
 		return position;
 	}
 
+	@Deprecated
 	private static ArrayList<Position> getReachableQueenPosition(GameBoard board, Piece piece, int col, int row, boolean defend)
 	{
 		ArrayList<Position> position = getReachableRookPosition(board, piece, col, row, defend);
-		position.addAll(getReachableBishopPosition(board.board, col, row, defend));
+		position.addAll(getReachableBishopPosition(board, piece, col, row, defend));
 		return position;
 	}
 
@@ -369,8 +477,7 @@ public class MoveHelper
 
 	public static boolean isUnderAttack(GameBoard board, Position targetPos, int color)
 	{
-		return isUnderAttack(board, targetPos,
-				board.getAllPossibleMovesWithoutValidation(color));
+		return isUnderAttack(board, targetPos, board.getAllPossibleMovesWithoutValidation(color));
 	}
 
 	private static boolean checkFree(Piece[][] board, int col, int row)
