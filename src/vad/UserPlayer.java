@@ -14,7 +14,7 @@ public class UserPlayer implements Player, ClickListener
 	public UserPlayer(int playerColor)
 	{
 		this.playerColor = playerColor;
-		gui = new ChessGUI(this);
+		gui = new ChessGUI(this, playerColor);
 	}
 
 	public void update(GameBoard board)

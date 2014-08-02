@@ -98,4 +98,14 @@ public class Position
 			return null;
 		return get(col + 1, row + 1);
 	}
+	
+	public Position getRelative(int dc, int dr)
+	{
+		int c=col+dc;
+		int r=row+dr;
+		if(c<0||c>7||r<0||r>7){
+			return null;
+		}
+		return get(c, r);
+	}
 }

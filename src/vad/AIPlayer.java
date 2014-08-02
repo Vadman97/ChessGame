@@ -23,7 +23,7 @@ public class AIPlayer implements Player
 	{
 		this.playerColor = playerColor;
 		if (UI_ENABLED)
-			gui = new ChessGUI(null);
+			gui = new ChessGUI(null, playerColor);
 	}
 
 	@Override
