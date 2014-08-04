@@ -60,12 +60,10 @@ public class AIPlayer implements Player
 				if(entry.getValue()>alpha){
 					alpha=entry.getValue();
 				}
-				System.out.println("LB");
 			}else if(entry.isUpperBound()){
 				if(entry.getValue()<beta){
 					beta=entry.getValue();
 				}
-				System.out.println("UB");
 			}else{
 				return entry.getValue();
 			}
@@ -98,15 +96,106 @@ public class AIPlayer implements Player
 		cache.put(cgb, new TranspositionTableEntry(cacheFlag, alpha, d));
 		return alpha;
 	}
+	
+	public int negascout(GameBoard board, int alpha, int beta, int d)
+	{
+		CompressedGameBoard cgb = new CompressedGameBoard(board);
+		if (cache.containsKey(cgb))
+		{
+			TranspositionTableEntry entry=cache.get(cgb);
+			if(entry.isLowerBound()){
+				if(entry.getValue()>alpha){
+					alpha=entry.getValue();
+				}
+			}else if(entry.isUpperBound()){
+				if(entry.getValue()<beta){
+					beta=entry.getValue();
+				}
+			}else{
+				return entry.getValue();
+			}
+			if(alpha>=beta){
+				return entry.getValue();
+			}
+		}
+		int originalAlpha=alpha;
+		if (d == 0)
+		{
+			int score = evaluateBoard(board);
+			if (board.currentColor != playerColor)
+				score = -score;
+			cache.put(cgb, new TranspositionTableEntry(TranspositionTableEntry.PRECISE, score, 0));
+			return score;
+		}
+		boolean first=true;
+		for (Move child : board.getAllPossibleMoves(board.currentColor))
+		{
+			int score;
+			if(first){
+				first=false;
+				board.apply(child);
+				score = -negascout(board, -alpha-1, -alpha, d - 1);
+				if(alpha<score&&score<beta){
+					score=-negascout(board, -beta, -score, d-1);
+				}
+				board.undo(child);
+			}else{
+				board.apply(child);
+				score = -negascout(board, -beta, -alpha, d - 1);
+				board.undo(child);
+			}
+			if (score > alpha)
+				alpha = score;
+			if (alpha >= beta)
+			{
+				break;
+			}
+		}
+		int cacheFlag=alpha<=originalAlpha?TranspositionTableEntry.UPPER_BOUND:(alpha>=beta?TranspositionTableEntry.LOWER_BOUND:TranspositionTableEntry.PRECISE);
+		cache.put(cgb, new TranspositionTableEntry(cacheFlag, alpha, d));
+		return alpha;
+	}
 
-	public Move getBestMove(GameBoard board, int d)
+	public Move getBestMoveNegamax(GameBoard board, int d)
+	{
+		Move best = null;
+		int alpha = MIN;
+		boolean first=true;
+		for (Move child : board.getAllPossibleMoves(board.currentColor))
+		{
+			int score;
+			if(first){
+				first=false;
+				board.apply(child);
+				score = -negascout(board, -alpha-1, -alpha, d - 1);
+				if(alpha<score){
+					score=-negascout(board, MIN, -score, d-1);
+				}
+				board.undo(child);
+			}else{
+				board.apply(child);
+				score = -negascout(board, MIN, -alpha, d - 1);
+				board.undo(child);
+			}
+			if (score > alpha)
+			{
+				alpha = score;
+				best = child;
+			}
+		}
+		System.out.println("Best score: " + alpha);
+		cache.clear();
+		return best;
+	}
+	
+	public Move getBestMoveNegascout(GameBoard board, int d)
 	{
 		Move best = null;
 		int alpha = MIN;
 		for (Move child : board.getAllPossibleMoves(board.currentColor))
 		{
 			board.apply(child);
-			int score = -negamax(board, MIN, -alpha, d - 1);
+			int score = -negascout(board, MIN, -alpha, d - 1);
 			board.undo(child);
 			if (score > alpha)
 			{
@@ -117,6 +206,13 @@ public class AIPlayer implements Player
 		System.out.println("Best score: " + alpha);
 		cache.clear();
 		return best;
+	}
+	
+	
+	
+	public Move getBestMove(GameBoard board, int d)
+	{
+		return getBestMoveNegascout(board, d);
 	}
 
 	public int evaluateBoard(GameBoard board)
