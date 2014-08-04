@@ -18,6 +18,8 @@ public class AIPlayer implements Player
 	public static final int MIN = -MAX;
 
 	private static final boolean UI_ENABLED = false;
+	
+	int benchMark;
 
 	public AIPlayer(int playerColor)
 	{
@@ -78,6 +80,7 @@ public class AIPlayer implements Player
 			if (board.currentColor != playerColor)
 				score = -score;
 			cache.put(cgb, new TranspositionTableEntry(TranspositionTableEntry.PRECISE, score, 0));
+			benchMark++;
 			return score;
 		}
 		for (Move child : board.getAllPossibleMoves(board.currentColor))
@@ -125,6 +128,7 @@ public class AIPlayer implements Player
 			if (board.currentColor != playerColor)
 				score = -score;
 			cache.put(cgb, new TranspositionTableEntry(TranspositionTableEntry.PRECISE, score, 0));
+			benchMark++;
 			return score;
 		}
 		boolean first=true;
@@ -208,11 +212,35 @@ public class AIPlayer implements Player
 		return best;
 	}
 	
-	
+	public Move getBestMoveMTDF(GameBoard board, int d){
+		int score=0;
+		int lb=MIN;
+		int ub=MAX;
+		do{
+			int beta=score==lb?score+1:score;
+			score=negamax(board, beta-1, beta, d);
+			if(score<beta){
+				ub=score;
+			}else{
+				lb=score;
+			}
+		}while(lb<ub);
+		return getBestMoveNegamax(board, d);
+	}
 	
 	public Move getBestMove(GameBoard board, int d)
 	{
-		return getBestMoveNegascout(board, d);
+		/*
+		 * Due to unknown reason, 
+		 * negascout search more nodes than negamax(why?)
+		 * but MTD-F search less nodes
+		 * All these three should give same results - 
+		 * which is the optimal result.
+		 */
+		benchMark=0;
+		Move ret= getBestMoveMTDF(board, d);
+		System.out.println(benchMark+" nodes searched");
+		return ret;
 	}
 
 	public int evaluateBoard(GameBoard board)
