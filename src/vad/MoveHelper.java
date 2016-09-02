@@ -364,11 +364,15 @@ public class MoveHelper
 		if (board.hasKingMoved(color) || board.hasLRookMoved(color))
 			return false;
 
+		if (col - 3 < 0) // out of bounds
+			return false;
+		
 		if (board.isEmpty(Position.get(col - 1, row)) && board.isEmpty(Position.get(col - 2, row))
 				&& board.isEmpty(Position.get(col - 3, row))
-				&& !isUnderAttack(board, Position.get(col, row), Piece.getOppositeColor(color))
-				&& !isUnderAttack(board, Position.get(col - 1, row), Piece.getOppositeColor(color))
-				&& !isUnderAttack(board, Position.get(col - 2, row), Piece.getOppositeColor(color)))
+				)
+//				&& !isUnderAttack(board, Position.get(col, row), Piece.getOppositeColor(color))
+//				&& !isUnderAttack(board, Position.get(col - 1, row), Piece.getOppositeColor(color))
+//				&& !isUnderAttack(board, Position.get(col - 2, row), Piece.getOppositeColor(color)))
 		{
 			return true;
 		} else
@@ -381,9 +385,14 @@ public class MoveHelper
 	{
 		if (board.hasKingMoved(color) || board.hasRRookMoved(color))
 			return false;
+		
+		if (col + 2 >= GameBoard.WIDTH) // out of bounds
+			return false;
+		
 		if (board.isEmpty(Position.get(col + 1, row)) && board.isEmpty(Position.get(col + 2, row))
-				&& !isUnderAttack(board, Position.get(col, row), Piece.getOppositeColor(color))
-				&& !isUnderAttack(board, Position.get(col + 1, row), Piece.getOppositeColor(color)))
+				)
+//				&& !isUnderAttack(board, Position.get(col, row), Piece.getOppositeColor(color))
+//				&& !isUnderAttack(board, Position.get(col + 1, row), Piece.getOppositeColor(color)))
 		{
 			return true;
 		} else

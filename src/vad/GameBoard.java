@@ -24,6 +24,7 @@ public class GameBoard
 	public static final int KING_MOVED_FLAG = 0;
 	public static final int L_ROOK_FLAG = 1;
 	public static final int R_ROOK_FLAG = 2;
+	public static final short WIDTH = 8;
 	//TODO three variables can be combined into two
 
 	public static final int[] STARTING_ROW =
@@ -63,6 +64,12 @@ public class GameBoard
 
 	public void apply(Move m)
 	{
+		currentColor = Piece.getOppositeColor(currentColor);
+		if (m == null) {
+			System.out.println("Move is null cannot apply");
+			return;
+		}
+		
 		Position start = m.getStartPosition();
 		Position dest = m.getDestPosition();
 		Piece startPiece = getPiece(start);
@@ -74,8 +81,6 @@ public class GameBoard
 		// System.out.println("LROOK MOVE");
 		if (m.isFirstRRookMove())
 			setHasRRookMoved(currentColor, true);
-
-		currentColor = Piece.getOppositeColor(currentColor);
 
 		/* Check if it's castling */
 		if (startPiece.getType() == Piece.KING)
@@ -93,6 +98,8 @@ public class GameBoard
 				setPiece(dest.getLeft(), getPiece(rookPosition));
 				setPiece(rookPosition, null);
 			}
+		} else if (startPiece.getType() == Piece.PAWN) {
+			//TODO PAWN PROMOTION
 		}
 
 		setPiece(start, null);

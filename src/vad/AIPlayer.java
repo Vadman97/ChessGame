@@ -6,7 +6,7 @@ import java.util.HashMap;
 public class AIPlayer implements Player
 {
 	int playerColor;
-	int depth = 4;
+	int depth = 5;
 	GameBoard realBoard;
 	HashMap<CompressedGameBoard, Integer> cache = new HashMap<>();
 
@@ -34,7 +34,18 @@ public class AIPlayer implements Player
 		long start = System.currentTimeMillis();
 		Move move = getBestMove(board, depth);
 		long end = System.currentTimeMillis();
-		System.out.println("AI Think time: " + (end - start) / 1000.);
+		double timeSec = (end - start) / 1000.;
+		
+		// increase search depth if our search space gets smaller
+		if (timeSec < 1.) {
+			depth++;
+			System.out.println("Search depth increased to " + depth);
+		} else if (timeSec > 10.) {
+			depth /= 2;
+			System.out.println("Search depth decreased to " + depth);
+		}
+		
+		System.out.println("AI Think time: " + timeSec);
 		return move;
 	}
 
@@ -90,6 +101,8 @@ public class AIPlayer implements Player
 		{
 			board.apply(child);
 			int score = -negamax(board, MIN, -alpha, d - 1);
+			//TODO how come the score is sometimes MIN (no best move?)
+			//TOOD how does this handle tie/end of the game?
 			board.undo(child);
 			if (score > alpha)
 			{
@@ -125,8 +138,8 @@ public class AIPlayer implements Player
 		int castleVal = 0;
 		int castleEVal = 0;
 
-		mobility = board.getAllPossibleMoves(playerColor).size();
-		EMobility = board.getAllPossibleMoves(playerColor == Piece.BLACK ? Piece.WHITE : Piece.BLACK).size();
+//		mobility = board.getAllPossibleMoves(playerColor).size();
+//		EMobility = board.getAllPossibleMoves(playerColor == Piece.BLACK ? Piece.WHITE : Piece.BLACK).size();
 
 		for (int i = 0; i < 8; i++)
 		{
@@ -211,10 +224,15 @@ public class AIPlayer implements Player
 		}
 		// 200, 9, 5, 3, 1, 0.5, 0.25, 1
 		// 800, 36, 20, 12, 4, 2, 1, 4
-		score = 800 * (numK - numEK) + 36 * (numQ - numEQ) + 20 * (numR - numER) + 12 * (numB - numEB + numN - numEN) + 4
-				* (numP - numEP) - 2
-				* (doubledPawns - doubledEPawns + blockedPawns - blockedEPawns + isolatedPawns - isolatedEPawns) + 1
-				* (mobility - EMobility) + 4 * (fProtected - eProtected) - 2 * (castleVal - castleEVal);
+		score = 1600 * (numK - numEK) + 
+				800 * (numQ - numEQ) + 
+				320 * (numR - numER) + 
+				192 * (numB - numEB + numN - numEN) + 
+				4 * (numP - numEP) +
+//				-1 * (doubledPawns - doubledEPawns + blockedPawns - blockedEPawns + isolatedPawns - isolatedEPawns) + 
+//				1 * (mobility - EMobility) + 
+				8 * (fProtected - eProtected)
+				- 2 * (castleVal - castleEVal);
 		// TODO maybe cast is bad
 		return score;
 	}
