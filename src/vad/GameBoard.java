@@ -99,7 +99,14 @@ public class GameBoard
 				setPiece(rookPosition, null);
 			}
 		} else if (startPiece.getType() == Piece.PAWN) {
-			//TODO PAWN PROMOTION
+			//Pawn promotion
+			if (startPiece.getColor() == Piece.WHITE) {
+				if (dest.getRow() == 0)
+					startPiece = new Piece(startPiece.getColor(), Piece.QUEEN);
+			} else if (startPiece.getColor() == Piece.BLACK) {
+				if (dest.getRow() == 7)
+					startPiece = new Piece(startPiece.getColor(), Piece.QUEEN);
+			}
 		}
 
 		setPiece(start, null);

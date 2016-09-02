@@ -6,7 +6,7 @@ import java.util.HashMap;
 public class AIPlayer implements Player
 {
 	int playerColor;
-	int depth = 5;
+	int depth = 4;
 	GameBoard realBoard;
 	HashMap<CompressedGameBoard, Integer> cache = new HashMap<>();
 
@@ -38,10 +38,10 @@ public class AIPlayer implements Player
 		
 		// increase search depth if our search space gets smaller
 		if (timeSec < 1.) {
-			depth++;
+			depth += 2;
 			System.out.println("Search depth increased to " + depth);
-		} else if (timeSec > 10.) {
-			depth /= 2;
+		} else if (timeSec > 15.) {
+			depth -= 2;
 			System.out.println("Search depth decreased to " + depth);
 		}
 		
@@ -80,10 +80,11 @@ public class AIPlayer implements Player
 		{
 			board.apply(child);
 			int score = -negamax(board, -beta, -alpha, d - 1);
+			
 			board.undo(child);
 			if (score > alpha)
 				alpha = score;
-			if (alpha >= beta)
+			if (alpha >= beta) // was >=
 			{
 				break;
 			}
@@ -95,6 +96,7 @@ public class AIPlayer implements Player
 
 	public Move getBestMove(GameBoard board, int d)
 	{
+		System.out.println("Thinking.....");
 		Move best = null;
 		int alpha = MIN;
 		for (Move child : board.getAllPossibleMoves(board.currentColor))
@@ -110,6 +112,7 @@ public class AIPlayer implements Player
 				best = child;
 			}
 		}
+		
 		System.out.println("Best score: " + alpha);
 		cache.clear();
 		return best;
@@ -140,6 +143,7 @@ public class AIPlayer implements Player
 
 //		mobility = board.getAllPossibleMoves(playerColor).size();
 //		EMobility = board.getAllPossibleMoves(playerColor == Piece.BLACK ? Piece.WHITE : Piece.BLACK).size();
+		
 
 		for (int i = 0; i < 8; i++)
 		{
@@ -147,16 +151,18 @@ public class AIPlayer implements Player
 			boolean columnHasPawnE = false;
 			for (int j = 0; j < 8; j++)
 			{
-				if (board.isEmpty(Position.get(i, j)))
+				Position pos = Position.get(i, j);
+				if (board.isEmpty(pos))
 					continue;
-				Piece p = board.getPiece(Position.get(i, j));
+				Piece p = board.getPiece(pos);
 
 				if (p.getColor() == playerColor) // piece of computer
 				{
+					mobility += MoveHelper.getAllMoves4PieceWithoutValidation(board, pos).size();
 					switch (p.getType())
 					{
 					case Piece.KING:
-						castleVal = MoveHelper.canCastleLeft(board, playerColor, i, j) ? 2 : 0; //hasCastled
+//						castleVal = MoveHelper.canCastleLeft(board, playerColor, i, j) ? 2 : 0; //hasCastled
 						numK++;
 						break;
 					case Piece.QUEEN:
@@ -179,18 +185,20 @@ public class AIPlayer implements Player
 						 * Position.get(i, j), false).size() == 0)
 						 * blockedPawns++;
 						 */
+//						mobility += MoveHelper.getAllMoves4PieceWithoutValidation(board, pos).size();
 						break;
 					}
-					/*
-					 * if (MoveHelper.isProtected(board, Position.get(i,j)))
-					 * fProtected++;
-					 */
+					
+//					 if (MoveHelper.isProtected(board, Position.get(i,j)))
+//						 fProtected++;
+					 
 				} else
 				{
+					EMobility += MoveHelper.getAllMoves4PieceWithoutValidation(board, pos).size();
 					switch (p.getType())
 					{
 					case Piece.KING:
-						castleEVal = MoveHelper.canCastleLeft(board, playerColor, i, j) ? 1 : 0;
+//						castleEVal = MoveHelper.canCastleLeft(board, playerColor, i, j) ? 1 : 0;
 						numEK++;
 						break;
 					case Piece.QUEEN:
@@ -213,27 +221,36 @@ public class AIPlayer implements Player
 						 * Position.get(i, j), false).size() == 0)
 						 * blockedEPawns++;
 						 */
+//						EMobility += MoveHelper.getAllMoves4PieceWithoutValidation(board, pos).size();
 						break;
 					}
-					/*
-					 * if (MoveHelper.isProtected(board, Position.get(i,j)))
-					 * eProtected++;
-					 */
+					
+//					 if (MoveHelper.isProtected(board, Position.get(i,j)))
+//						 eProtected++;
 				}
 			}
 		}
 		// 200, 9, 5, 3, 1, 0.5, 0.25, 1
 		// 800, 36, 20, 12, 4, 2, 1, 4
-		score = 1600 * (numK - numEK) + 
-				800 * (numQ - numEQ) + 
-				320 * (numR - numER) + 
-				192 * (numB - numEB + numN - numEN) + 
-				4 * (numP - numEP) +
-//				-1 * (doubledPawns - doubledEPawns + blockedPawns - blockedEPawns + isolatedPawns - isolatedEPawns) + 
-//				1 * (mobility - EMobility) + 
-				8 * (fProtected - eProtected)
-				- 2 * (castleVal - castleEVal);
-		// TODO maybe cast is bad
+//		score = 1600 * (numK - numEK) + 
+//				800 * (numQ - numEQ) + 
+//				320 * (numR - numER) + 
+//				192 * (numB - numEB + numN - numEN) + 
+//				2 * (numP - numEP) +
+////				-1 * (doubledPawns - doubledEPawns + blockedPawns - blockedEPawns + isolatedPawns - isolatedEPawns) + 
+////				1 * (mobility - EMobility) + 
+//				// 8 * (fProtected - eProtected)
+//				- 2 * (castleVal - castleEVal);
+		score = 20 * (
+					64 * (numK - numEK) + 
+					9 * (numQ - numEQ) + 
+					5 * (numR - numER) + 
+					3 * (numB - numEB + numN - numEN) + 
+					1 * (numP - numEP)
+					) + 
+				1 * (mobility - EMobility)
+				;
+		// TODO improve score for every pawn not in starting row 
 		return score;
 	}
 

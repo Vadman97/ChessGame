@@ -26,6 +26,10 @@ public class MoveHelper
 
 	}
 
+	/*
+	 * WithoutValidation means without checking whether the king is in a check and requiring the king to protect
+	 * himself from the check before doing anything else
+	 */
 	public static ArrayList<Move> getAllMoves4PieceWithoutValidation(GameBoard board, Position pos)
 	{
 		ArrayList<Move> moves = new ArrayList<>();

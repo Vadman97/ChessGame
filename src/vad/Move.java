@@ -10,6 +10,7 @@ public class Move implements Serializable
 	
 	private Position start;
 	private Position dest;
+	private Piece startPiece;
 	private Piece killedPiece;
 	private byte flags;
 	
@@ -20,7 +21,7 @@ public class Move implements Serializable
 	
 	public Move(GameBoard b, Position start, Position dest)
 	{
-		Piece startPiece=b.getPiece(start);
+		this.startPiece=b.getPiece(start);
 		this.start = start;
 		this.dest = dest;
 		
@@ -38,6 +39,10 @@ public class Move implements Serializable
 				flags=(byte)BitField.setBit(flags, R_ROOK_FLAG);
 			}
 		}
+	}
+	
+	public String toString() {
+		return "Move " + startPiece.getType() + " figure from " + start.getRow() + "R " + start.getColumn() + "C to " + start.getRow() + "R " + start.getColumn() + "C";
 	}
 	
 

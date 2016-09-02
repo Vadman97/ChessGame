@@ -31,7 +31,7 @@ public class Piece implements Serializable
 	private int type;
 	private int	color;
 	
-	private Piece(int color, int type){
+	public Piece(int color, int type){
 		this.color=color;
 		this.type=type;
 	}
