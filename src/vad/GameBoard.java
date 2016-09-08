@@ -35,14 +35,14 @@ public class GameBoard
 		board = new Piece[8][8];
 		for (int i = 0; i < 8; i++)
 		{
-			board[i][0] = Piece.get(Piece.BLACK, STARTING_ROW[i]);
-			board[i][7] = Piece.get(Piece.WHITE, STARTING_ROW[i]);
-			board[i][1] = Piece.get(Piece.BLACK, Piece.PAWN);
-			board[i][6] = Piece.get(Piece.WHITE, Piece.PAWN);
+			setPiece(Position.get(i, 0), Piece.get(Piece.BLACK, STARTING_ROW[i]));
+			setPiece(Position.get(i, 7), Piece.get(Piece.WHITE, STARTING_ROW[i]));
+			setPiece(Position.get(i, 1), Piece.get(Piece.BLACK, Piece.PAWN));
+			setPiece(Position.get(i, 6), Piece.get(Piece.WHITE, Piece.PAWN));
 		}
 	}
 
-	public GameBoard(boolean nothing)
+	public GameBoard(boolean _)
 	{
 		board = new Piece[8][8];
 	}
@@ -55,6 +55,18 @@ public class GameBoard
 	public boolean isEmpty(Position pos)
 	{
 		return board[pos.col][pos.row] == null;
+	}
+	
+	public int getNumAllPieces() 
+	{
+		int count = 0;
+		for (int i = 0; i < 8; i++) {
+			for (int j = 0; j < 8; j++) {
+				if (!isEmpty(Position.get(i, j)))
+					count++;
+			}
+		}
+		return count;
 	}
 
 	public Piece getPiece(Position dest)
@@ -73,6 +85,11 @@ public class GameBoard
 		Position start = m.getStartPosition();
 		Position dest = m.getDestPosition();
 		Piece startPiece = getPiece(start);
+		
+		if (startPiece == null) {
+			System.out.println("Error no piece at start location");
+			return;
+		}
 
 		if (m.isFirstKingMove())
 			setHasKingMoved(currentColor, true);

@@ -1,5 +1,6 @@
 package vad;
 
+import java.awt.Dialog;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -9,7 +10,9 @@ import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 @SuppressWarnings("serial")
@@ -39,10 +42,11 @@ public class ChessGUI extends JFrame implements ActionListener
 	}
 
 	ClickListener onClick;
+	JPanel gameBoard;
 
 	public ChessGUI(ClickListener onClick, int color)
 	{
-		JPanel gameBoard = new JPanel();
+		gameBoard = new JPanel();
 		gameBoard.setLayout(new GridLayout(8, 8));
 		if (color == Piece.WHITE)
 		{
@@ -73,6 +77,18 @@ public class ChessGUI extends JFrame implements ActionListener
 		setVisible(true);
 
 		this.onClick = onClick;
+	}
+	
+	public void showThinkingModal(long startTime) {
+		JOptionPane.showConfirmDialog(null,
+                "Thinking",
+                "Thinking", 
+                JOptionPane.NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE); 
+	}
+	
+	public void hideThinkingModal() {
+		
 	}
 
 	public void updateBoard(GameBoard board)

@@ -16,6 +16,8 @@ public class AIPlayer implements Player
 
 	public static final int MAX = Integer.MAX_VALUE;
 	public static final int MIN = -MAX;
+	
+	public boolean thinking = false;
 
 	private static final boolean UI_ENABLED = false;
 	
@@ -34,13 +36,18 @@ public class AIPlayer implements Player
 		GameBoard board=cpdboard.getGameBoard();
 		realBoard = board;
 		long start = System.currentTimeMillis();
+		thinking = true;
 		Move move = getBestMove(board, depth);
 		long end = System.currentTimeMillis();
 		double timeSec = (end - start) / 1000.;
 		
 		// increase search depth if our search space gets smaller
-		if (timeSec < 1.) {
-			depth += 2;
+		if (timeSec < 1. && board.getNumAllPieces() < 15) {
+			if (depth == 6 && board.getNumAllPieces() < 10) {
+				depth += 2;
+			} else {
+				depth = 6;
+			}
 			System.out.println("Search depth increased to " + depth);
 		} else if (timeSec > 15.) {
 			depth -= 2;
@@ -48,6 +55,7 @@ public class AIPlayer implements Player
 		}
 		
 		System.out.println("AI Think time: " + timeSec);
+		thinking = false;
 		return move;
 	}
 
@@ -92,6 +100,8 @@ public class AIPlayer implements Player
 				score = -score;
 			cache.put(cgb, new TranspositionTableEntry(TranspositionTableEntry.PRECISE, score, 0));
 			benchMark++;
+			if (benchMark % 20000 == 0)
+				System.out.println("Searched " + benchMark + " nodes.");
 			return score;
 		}
 		for (Move child : board.getAllPossibleMoves(board.currentColor))
@@ -140,6 +150,8 @@ public class AIPlayer implements Player
 			if (board.currentColor != playerColor)
 				score = -score;
 			cache.put(cgb, new TranspositionTableEntry(TranspositionTableEntry.PRECISE, score, 0));
+			if (benchMark % 20000 == 0)
+				System.out.println("Searched " + benchMark + " nodes.");
 			benchMark++;
 			return score;
 		}
@@ -206,7 +218,6 @@ public class AIPlayer implements Player
 	
 	public Move getBestMoveNegascout(GameBoard board, int d)
 	{
-		System.out.println("Thinking.....");
 		Move best = null;
 		int alpha = MIN;
 		for (Move child : board.getAllPossibleMoves(board.currentColor))
@@ -254,6 +265,7 @@ public class AIPlayer implements Player
 		 * All these three should give same results - 
 		 * which is the optimal result.
 		 */
+		System.out.println("Thinking.....");
 		benchMark=0;
 		Move ret= getBestMoveMTDF(board, d);
 		System.out.println(benchMark+" nodes searched");
@@ -262,6 +274,7 @@ public class AIPlayer implements Player
 
 	public int evaluateBoard(GameBoard board)
 	{
+		// TODO(vadim): change the GameBoard to save an array of which squares are under attack/defended etc
 		int score = 0;
 
 		int numK = 0, numEK = 0;
@@ -282,16 +295,18 @@ public class AIPlayer implements Player
 		int eProtected = 0;
 		int castleVal = 0;
 		int castleEVal = 0;
+		int piecesOnStartRow = 0;
+		int piecesEOnStartRow = 0;
 
 //		mobility = board.getAllPossibleMoves(playerColor).size();
 //		EMobility = board.getAllPossibleMoves(playerColor == Piece.BLACK ? Piece.WHITE : Piece.BLACK).size();
 		
 
-		for (int i = 0; i < 8; i++)
+		for (int i = 0; i < 8; i++) // col
 		{
 			boolean columnHasPawnF = false;
 			boolean columnHasPawnE = false;
-			for (int j = 0; j < 8; j++)
+			for (int j = 0; j < 8; j++) // row
 			{
 				Position pos = Position.get(i, j);
 				if (board.isEmpty(pos))
@@ -300,11 +315,13 @@ public class AIPlayer implements Player
 
 				if (p.getColor() == playerColor) // piece of computer
 				{
-					mobility += MoveHelper.getAllMoves4PieceWithoutValidation(board, pos).size();
+					if (j == 0 || j == 1)
+						piecesOnStartRow++;
+//					mobility += MoveHelper.getAllMoves4PieceWithoutValidation(board, pos).size();
 					switch (p.getType())
 					{
 					case Piece.KING:
-//						castleVal = MoveHelper.canCastleLeft(board, playerColor, i, j) ? 2 : 0; //hasCastled
+						castleVal = MoveHelper.canCastleLeft(board, playerColor, i, j) ? 2 : 0; //hasCastled
 						numK++;
 						break;
 					case Piece.QUEEN:
@@ -320,8 +337,11 @@ public class AIPlayer implements Player
 						if (columnHasPawnF)
 							doubledPawns++;
 						columnHasPawnF = true;
-						if (i == 0 || i == 7 || j == 0 || j == 7)
+						if (i == 0 || i == 7)
 							isolatedPawns++;
+						if (j == 2) {
+							piecesOnStartRow++;
+						}
 						/*
 						 * if (MoveHelper.getAllMoves4Piece(board,
 						 * Position.get(i, j), false).size() == 0)
@@ -336,11 +356,13 @@ public class AIPlayer implements Player
 					 
 				} else
 				{
-					EMobility += MoveHelper.getAllMoves4PieceWithoutValidation(board, pos).size();
+					if (j == 6 || j == 7)
+						piecesEOnStartRow++;
+//					EMobility += MoveHelper.getAllMoves4PieceWithoutValidation(board, pos).size();
 					switch (p.getType())
 					{
 					case Piece.KING:
-//						castleEVal = MoveHelper.canCastleLeft(board, playerColor, i, j) ? 1 : 0;
+						castleEVal = MoveHelper.canCastleLeft(board, playerColor, i, j) ? 1 : 0;
 						numEK++;
 						break;
 					case Piece.QUEEN:
@@ -358,6 +380,9 @@ public class AIPlayer implements Player
 						columnHasPawnE = true;
 						if (i == 0 || i == 8 || j == 0 || j == 8)
 							isolatedEPawns++;
+						if (j == 5) {
+							piecesEOnStartRow++;
+						}
 						/*
 						 * if (MoveHelper.getAllMoves4Piece(board,
 						 * Position.get(i, j), false).size() == 0)
@@ -384,13 +409,17 @@ public class AIPlayer implements Player
 //				// 8 * (fProtected - eProtected)
 //				- 2 * (castleVal - castleEVal);
 		score = 20 * (
-					64 * (numK - numEK) + 
+					32 * (numK - numEK) + 
 					9 * (numQ - numEQ) + 
 					5 * (numR - numER) + 
 					3 * (numB - numEB + numN - numEN) + 
 					1 * (numP - numEP)
 					) + 
-				1 * (mobility - EMobility)
+				0 * (mobility - EMobility) + 
+				3 * (doubledEPawns - doubledPawns) + 
+				3 * (isolatedEPawns - isolatedPawns) +
+				3 * (castleVal - castleEVal) +
+				7 * (piecesEOnStartRow - piecesOnStartRow)
 				;
 		// TODO improve score for every pawn not in starting row 
 		return score;
