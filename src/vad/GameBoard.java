@@ -93,9 +93,9 @@ public class GameBoard
 
 		if (m.isFirstKingMove())
 			setHasKingMoved(currentColor, true);
+		
 		if (m.isFirstLRookMove())
 			setHasLRookMoved(currentColor, true);
-		// System.out.println("LROOK MOVE");
 		if (m.isFirstRRookMove())
 			setHasRRookMoved(currentColor, true);
 
@@ -176,8 +176,12 @@ public class GameBoard
 		setPiece(move.getStartPosition(), movedPiece);
 		setPiece(move.getDestPosition(), move.getKilledPiece());
 	}
+	
+	public ArrayList<Move> getAllPossibleMovesWithoutValidation(int color) {
+		return getAllPossibleMovesWithoutValidation(color, false);
+	}
 
-	public ArrayList<Move> getAllPossibleMovesWithoutValidation(int color)
+	public ArrayList<Move> getAllPossibleMovesWithoutValidation(int color, boolean ignoreEKing)
 	{
 		ArrayList<Move> moves = new ArrayList<>();
 		for (int r = 0; r < 8; r++)
@@ -186,7 +190,12 @@ public class GameBoard
 			{
 				if (isEmpty(Position.get(c, r)))
 					continue;
-				if (getPiece(Position.get(c, r)).getColor() == color)
+				
+				Piece piece = getPiece(Position.get(c, r));
+				
+				if (ignoreEKing && piece.getType() == Piece.KING)
+					continue;
+				if (piece.getColor() == color)
 				{
 					moves.addAll(MoveHelper.getAllMoves4PieceWithoutValidation(this, Position.get(c, r)));
 				}

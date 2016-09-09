@@ -42,19 +42,19 @@ public class AIPlayer implements Player
 		double timeSec = (end - start) / 1000.;
 		
 		// increase search depth if our search space gets smaller
-		if (timeSec < 1. && board.getNumAllPieces() < 15) {
-			if (depth == 6 && board.getNumAllPieces() < 10) {
+		if (board.getNumAllPieces() < 20) {
+			if (depth == 6 && board.getNumAllPieces() < 12) {
 				depth += 2;
 			} else {
 				depth = 6;
 			}
-			System.out.println("Search depth increased to " + depth);
+		} else if (timeSec < 0.25) {
+			depth += 2;
 		} else if (timeSec > 15.) {
 			depth -= 2;
-			System.out.println("Search depth decreased to " + depth);
 		}
 		
-		System.out.println("AI Think time: " + timeSec);
+		System.out.println("AI Think time: " + timeSec + " depth: " + depth);
 		thinking = false;
 		return move;
 	}
@@ -301,6 +301,8 @@ public class AIPlayer implements Player
 //		mobility = board.getAllPossibleMoves(playerColor).size();
 //		EMobility = board.getAllPossibleMoves(playerColor == Piece.BLACK ? Piece.WHITE : Piece.BLACK).size();
 		
+//		ArrayList<Move> fMoves = board.getAllPossibleMovesWithDefend(playerColor);
+//		ArrayList<Move> eMoves = board.getAllPossibleMovesWithDefend(Piece.getOppositeColor(playerColor));
 
 		for (int i = 0; i < 8; i++) // col
 		{
@@ -339,9 +341,9 @@ public class AIPlayer implements Player
 						columnHasPawnF = true;
 						if (i == 0 || i == 7)
 							isolatedPawns++;
-						if (j == 2) {
-							piecesOnStartRow++;
-						}
+//						if (j == 2) {
+//							piecesOnStartRow++;
+//						}
 						/*
 						 * if (MoveHelper.getAllMoves4Piece(board,
 						 * Position.get(i, j), false).size() == 0)
@@ -351,7 +353,7 @@ public class AIPlayer implements Player
 						break;
 					}
 					
-//					 if (MoveHelper.isProtected(board, Position.get(i,j)))
+//					 if (MoveHelper.isProtected(board, Position.get(i,j), fMoves))
 //						 fProtected++;
 					 
 				} else
@@ -380,9 +382,9 @@ public class AIPlayer implements Player
 						columnHasPawnE = true;
 						if (i == 0 || i == 8 || j == 0 || j == 8)
 							isolatedEPawns++;
-						if (j == 5) {
-							piecesEOnStartRow++;
-						}
+//						if (j == 5) {
+//							piecesEOnStartRow++;
+//						}
 						/*
 						 * if (MoveHelper.getAllMoves4Piece(board,
 						 * Position.get(i, j), false).size() == 0)
@@ -392,7 +394,7 @@ public class AIPlayer implements Player
 						break;
 					}
 					
-//					 if (MoveHelper.isProtected(board, Position.get(i,j)))
+//					 if (MoveHelper.isProtected(board, Position.get(i,j), eMoves))
 //						 eProtected++;
 				}
 			}
@@ -419,9 +421,9 @@ public class AIPlayer implements Player
 				3 * (doubledEPawns - doubledPawns) + 
 				3 * (isolatedEPawns - isolatedPawns) +
 				3 * (castleVal - castleEVal) +
-				7 * (piecesEOnStartRow - piecesOnStartRow)
+				7 * (piecesEOnStartRow - piecesOnStartRow) + 
+				100 * (fProtected - eProtected)
 				;
-		// TODO improve score for every pawn not in starting row 
 		return score;
 	}
 
