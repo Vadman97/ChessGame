@@ -274,6 +274,7 @@ public class AIPlayer implements Player
 
 	public int evaluateBoard(GameBoard board)
 	{
+//		long start = System.nanoTime();
 		// TODO(vadim): change the GameBoard to save an array of which squares are under attack/defended etc
 		int score = 0;
 
@@ -317,7 +318,7 @@ public class AIPlayer implements Player
 
 				if (p.getColor() == playerColor) // piece of computer
 				{
-					if (j == 0 || j == 1)
+					if (j == 0)
 						piecesOnStartRow++;
 //					mobility += MoveHelper.getAllMoves4PieceWithoutValidation(board, pos).size();
 					switch (p.getType())
@@ -341,9 +342,9 @@ public class AIPlayer implements Player
 						columnHasPawnF = true;
 						if (i == 0 || i == 7)
 							isolatedPawns++;
-//						if (j == 2) {
-//							piecesOnStartRow++;
-//						}
+						if (j == 1) {
+							piecesOnStartRow++;
+						}
 						/*
 						 * if (MoveHelper.getAllMoves4Piece(board,
 						 * Position.get(i, j), false).size() == 0)
@@ -358,7 +359,7 @@ public class AIPlayer implements Player
 					 
 				} else
 				{
-					if (j == 6 || j == 7)
+					if (j == 7)
 						piecesEOnStartRow++;
 //					EMobility += MoveHelper.getAllMoves4PieceWithoutValidation(board, pos).size();
 					switch (p.getType())
@@ -380,11 +381,11 @@ public class AIPlayer implements Player
 						if (columnHasPawnE)
 							doubledEPawns++;
 						columnHasPawnE = true;
-						if (i == 0 || i == 8 || j == 0 || j == 8)
+						if (i == 0 || i == 7)
 							isolatedEPawns++;
-//						if (j == 5) {
-//							piecesEOnStartRow++;
-//						}
+						if (j == 6) {
+							piecesEOnStartRow++;
+						}
 						/*
 						 * if (MoveHelper.getAllMoves4Piece(board,
 						 * Position.get(i, j), false).size() == 0)
@@ -424,6 +425,7 @@ public class AIPlayer implements Player
 				7 * (piecesEOnStartRow - piecesOnStartRow) + 
 				100 * (fProtected - eProtected)
 				;
+//		System.out.println(((double)(System.nanoTime() - start)) * 1e-9);
 		return score;
 	}
 
