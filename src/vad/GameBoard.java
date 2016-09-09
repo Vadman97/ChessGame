@@ -46,6 +46,19 @@ public class GameBoard
 	{
 		board = new Piece[8][8];
 	}
+	
+	public GameBoard copy() {
+		GameBoard copy = new GameBoard(true);
+		for (int i = 0; i < 8; i++) {
+			for (int j = 0; j < 8; j++) {
+				copy.setPiece(Position.get(i, j), getPiece(Position.get(i, j)));
+			}
+		}
+		copy.currentColor = currentColor;
+		copy.whiteFlags = whiteFlags;
+		copy.blackFlags = blackFlags;
+		return copy;
+	}
 
 	public void setPiece(Position pos, Piece piece)
 	{
@@ -69,9 +82,9 @@ public class GameBoard
 		return count;
 	}
 
-	public Piece getPiece(Position dest)
+	public Piece getPiece(Position loc)
 	{
-		return board[dest.col][dest.row];
+		return board[loc.col][loc.row];
 	}
 
 	public void apply(Move m)

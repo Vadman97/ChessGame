@@ -42,7 +42,7 @@ public class Move implements Serializable
 	}
 	
 	public String toString() {
-		return "Move " + startPiece.getType() + " figure from " + start.getRow() + "R " + start.getColumn() + "C to " + start.getRow() + "R " + start.getColumn() + "C";
+		return "Move " + startPiece.getType() + " figure from " + start.getRow() + "R " + start.getColumn() + "C to " + dest.getRow() + "R " + dest.getColumn() + "C";
 	}
 	
 
