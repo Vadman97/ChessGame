@@ -24,8 +24,20 @@ public class PieceButton extends JButton
 
 	public void setPiece(Piece p)
 	{
+		setPiece(p, false);
+	}
+	
+	public void setPiece(Piece p, boolean newMove) 
+	{
 		piece = p;
 		dirty = true;
+		markNew(newMove);
+	}
+	
+	public void setPieceCheck(Piece p)
+	{
+		setPiece(p);
+		markCheck();
 	}
 
 	public Piece getPiece()
@@ -42,6 +54,22 @@ public class PieceButton extends JButton
 		{
 			setBackground(blank);
 		}
+	}
+	
+	public void markNew(boolean b) 
+	{
+		if (b == true)
+		{
+			setBackground(Color.MAGENTA);
+		} else
+		{
+			setBackground(blank);
+		}
+	}
+	
+	public void markCheck() 
+	{
+		setBackground(Color.RED);
 	}
 
 	public Dimension getPreferredSize()

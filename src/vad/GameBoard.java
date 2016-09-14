@@ -24,6 +24,7 @@ public class GameBoard
 	public static final int KING_MOVED_FLAG = 0;
 	public static final int L_ROOK_FLAG = 1;
 	public static final int R_ROOK_FLAG = 2;
+	public static final int CASTLED = 3;
 	public static final short WIDTH = 8;
 	//TODO three variables can be combined into two
 
@@ -89,7 +90,6 @@ public class GameBoard
 
 	public void apply(Move m)
 	{
-		currentColor = Piece.getOppositeColor(currentColor);
 		if (m == null) {
 			System.out.println("Move is null cannot apply");
 			return;
@@ -115,18 +115,20 @@ public class GameBoard
 		/* Check if it's castling */
 		if (startPiece.getType() == Piece.KING)
 		{
-			if (start.getColumn() - 3 == dest.getColumn())
+			if (start.getColumn() - 2 == dest.getColumn())
 			{
 				// L Castle
 				Position rookPosition = Position.get(0, dest.getRow());
 				setPiece(dest.getRight(), getPiece(rookPosition));
 				setPiece(rookPosition, null);
+				setCastled(currentColor, true);
 			} else if (start.getColumn() + 2 == dest.getColumn())
 			{
 				// R Castle
 				Position rookPosition = Position.get(7, dest.getRow());
 				setPiece(dest.getLeft(), getPiece(rookPosition));
 				setPiece(rookPosition, null);
+				setCastled(currentColor, true);
 			}
 		} else if (startPiece.getType() == Piece.PAWN) {
 			//Pawn promotion
@@ -143,11 +145,14 @@ public class GameBoard
 		setPiece(dest, startPiece);
 
 		// System.out.println("Move apply: " + m.getKilledPiece());
+		
+		currentColor = Piece.getOppositeColor(currentColor); // change whose turn it is
 
 	}
 
 	public void undo(Move move)
 	{
+		currentColor = Piece.getOppositeColor(currentColor); // undo whose turn it is
 		Position start = move.getStartPosition();
 		Position dest = move.getDestPosition();
 		Piece movedPiece = getPiece(dest);
@@ -165,17 +170,17 @@ public class GameBoard
 			setHasRRookMoved(movedPiece.getColor(), false);
 		}
 		// System.out.println("Move undo: " + move.getKilledPiece());
-		currentColor = Piece.getOppositeColor(currentColor);
 
 		if (movedPiece.getType() == Piece.KING)
 		{
-			if (start.getColumn() - 3 == dest.getColumn())
+			if (start.getColumn() - 2 == dest.getColumn())
 			{
 				// L Castle
 				Position rookOriginalPosition = Position.get(0, dest.getRow());
 				Position rookCurrentPosition = dest.getRight();
 				setPiece(rookOriginalPosition, getPiece(rookCurrentPosition));
 				setPiece(rookCurrentPosition, null);
+				setCastled(movedPiece.getColor(), false);
 			} else if (start.getColumn() + 2 == dest.getColumn())
 			{
 				// R Castle
@@ -183,6 +188,16 @@ public class GameBoard
 				Position rookCurrentPosition = dest.getLeft();
 				setPiece(rookOriginalPosition, getPiece(rookCurrentPosition));
 				setPiece(rookCurrentPosition, null);
+				setCastled(movedPiece.getColor(), false);
+			}
+		} else if (movedPiece.getType() == Piece.PAWN) {
+			//Pawn promotion undo
+			if (movedPiece.getColor() == Piece.WHITE) {
+				if (dest.getRow() == 0)
+					movedPiece = new Piece(movedPiece.getColor(), Piece.PAWN);
+			} else if (movedPiece.getColor() == Piece.BLACK) {
+				if (dest.getRow() == 7)
+					movedPiece = new Piece(movedPiece.getColor(), Piece.PAWN);
 			}
 		}
 
@@ -285,18 +300,12 @@ public class GameBoard
 	{
 		if (isCheck(kingColor))
 		{
-			if (getAllPossibleMovesWithValidation(kingColor).size() == 0)
+			if (getAllPossibleMoves(kingColor).size() == 0)
 				return true;
 		}
 		return false;
 	}
-
-	private ArrayList<Move> getAllPossibleMovesWithValidation(int kingColor)
-	{
-
-		return null;
-	}
-
+	
 	public boolean hasKingMoved(int color)
 	{
 		if (color == Piece.BLACK)
@@ -327,6 +336,17 @@ public class GameBoard
 		} else
 		{
 			return BitField.getBit(whiteFlags, R_ROOK_FLAG);
+		}
+	}
+	
+	public boolean hasCastled(int color)
+	{
+		if (color == Piece.BLACK)
+		{
+			return BitField.getBit(blackFlags, CASTLED);
+		} else
+		{
+			return BitField.getBit(whiteFlags, CASTLED);
 		}
 	}
 
@@ -360,6 +380,17 @@ public class GameBoard
 		} else
 		{
 			whiteFlags=(byte) BitField.changeBit(whiteFlags, R_ROOK_FLAG, moved);
+		}
+	}
+	
+	public void setCastled(int color, boolean castled)
+	{
+		if (color == Piece.BLACK)
+		{
+			blackFlags=(byte) BitField.changeBit(blackFlags, CASTLED, castled);
+		} else
+		{
+			whiteFlags=(byte) BitField.changeBit(whiteFlags, CASTLED, castled);
 		}
 	}
 }

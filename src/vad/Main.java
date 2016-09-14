@@ -29,7 +29,6 @@ public class Main
 		GameBoard board = new GameBoard();
 		while (true)
 		{
-
 			if (board.currentColor == Piece.WHITE)
 			{
 				CompressedGameBoard b = new CompressedGameBoard(board);

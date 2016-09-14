@@ -1,6 +1,5 @@
 package vad;
 
-import java.awt.Dialog;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -10,7 +9,6 @@ import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -43,6 +41,7 @@ public class ChessGUI extends JFrame implements ActionListener
 
 	ClickListener onClick;
 	JPanel gameBoard;
+	private boolean firstUpdate = true;
 
 	public ChessGUI(ClickListener onClick, int color)
 	{
@@ -97,8 +96,16 @@ public class ChessGUI extends JFrame implements ActionListener
 		{
 			PieceButton button = buttons[position.getColumn()][position.getRow()];
 			Piece piece = board.getPiece(position);
-			if (button.getPiece() != piece)
+			if (button.getPiece() != piece) {
+				button.setPiece(piece, !firstUpdate);
+			} else if (piece != null && piece.getType() == Piece.KING && board.isCheck(piece.getColor())) {
+				button.setPieceCheck(piece);
+			} else {
 				button.setPiece(piece);
+			}
+		}
+		if (firstUpdate) {
+			firstUpdate = false;
 		}
 		repaint();
 	}

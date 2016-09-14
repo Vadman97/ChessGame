@@ -19,11 +19,11 @@ public class CompressedGameBoard implements Serializable
 	long snd2c;
 	long trd2c;
 	long lst2c;
-	byte flags;
+	short flags;
 
 	public static int CURRENT_PLAYER_FLAG = 0;
 	public static int BLACK_FLAG_LOW = 1;
-	public static int WHITE_FLAG_LOW = 4;
+	public static int WHITE_FLAG_LOW = 5;
 
 	public CompressedGameBoard(GameBoard b)
 	{
@@ -131,8 +131,8 @@ public class CompressedGameBoard implements Serializable
 			}
 		}
 		board.currentColor = (flags >> CURRENT_PLAYER_FLAG) & 0b1;
-		board.blackFlags = (byte) ((flags >> BLACK_FLAG_LOW) & 0b111);
-		board.whiteFlags = (byte) ((flags >> WHITE_FLAG_LOW) & 0b111);
+		board.blackFlags = (byte) ((flags >> BLACK_FLAG_LOW) & 0b1111);
+		board.whiteFlags = (byte) ((flags >> WHITE_FLAG_LOW) & 0b1111);
 		return board;
 	}
 

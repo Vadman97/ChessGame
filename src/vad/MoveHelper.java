@@ -404,13 +404,16 @@ public class MoveHelper
 	}
 	
 	private static boolean allowedCastling(GameBoard board, int color, int col, int row, boolean right) {
-//		if (board.hasKingMoved(color))
-//			return false;
-//		
-//		if (right && board.hasRRookMoved(color))
-//			return false;
-//		if (!right && board.hasLRookMoved(color))
-//			return false;
+		if (board.hasCastled(color)) //simplify the calculations
+			return false;
+		
+		if (board.hasKingMoved(color))
+			return false;
+		
+		if (right && board.hasRRookMoved(color))
+			return false;
+		if (!right && board.hasLRookMoved(color))
+			return false;
 		
 		if (board.getPiece(Position.get(col, row)).getColor() == Piece.BLACK) {
 			if (row != 0)
@@ -441,7 +444,7 @@ public class MoveHelper
 		}
 		if (canCastleLeft(board, piece.getColor(), col, row))
 		{
-			position.add(Position.get(col - 3, row));
+			position.add(Position.get(col - 2, row));
 		}
 		if (canCastleRight(board, piece.getColor(), col, row))
 		{
@@ -580,73 +583,8 @@ public class MoveHelper
 		return isUnderAttack(board, targetPos, board.getAllPossibleMovesWithoutValidation(color));
 	}
 	
-	public static boolean isUnderAttack(GameBoard board, Position targetPos, int color, boolean ignoreEKing) {
+	public static boolean isUnderAttack(GameBoard board, Position targetPos, int color, boolean ignoreEKing) 
+	{
 		return isUnderAttack(board, targetPos, board.getAllPossibleMovesWithoutValidation(color, ignoreEKing));
 	}
-
-	private static boolean checkFree(Piece[][] board, int col, int row)
-	{
-		if (col < 0 || col > 7 || row < 0 || row > 7)
-			return false;
-		return board[col][row] == null;
-	}
-
-	private static boolean checkFreeAndAdd(Piece[][] board, ArrayList<Position> arr, int col, int row)
-	{
-		if (col < 0 || col > 7 || row < 0 || row > 7)
-			return false;
-		boolean ret = board[col][row] == null;
-		if (ret)
-		{
-			arr.add(Position.get(col, row));
-		}
-		return ret;
-	}
-
-	private static boolean checkDefend(Piece[][] board, ArrayList<Position> arr, int col, int row, Piece c)
-	{
-		if (col < 0 || col > 7 || row < 0 || row > 7)
-			return false;
-		if (board[col][row] == null)
-		{
-			return true;
-		}
-		if (board[col][row].getColor() == c.getColor())
-		{
-			arr.add(Position.get(col, row));
-		}
-		return false;
-	}
-
-	private static boolean checkFreeOrEatAndAdd(Piece[][] board, ArrayList<Position> arr, int col, int row, Piece c)
-	{
-		if (col < 0 || col > 7 || row < 0 || row > 7)
-			return false;
-		if (board[col][row] == null)
-		{
-			arr.add(Position.get(col, row));
-			return true;
-		}
-		if (board[col][row].getColor() != c.getColor())
-		{
-			arr.add(Position.get(col, row));
-		}
-		return false;
-	}
-
-	private static boolean checkEatAndAdd(Piece[][] board, ArrayList<Position> arr, int col, int row, Piece c)
-	{
-		if (col < 0 || col > 7 || row < 0 || row > 7)
-			return false;
-		if (board[col][row] == null)
-		{
-			return true;
-		}
-		if (board[col][row].getColor() != c.getColor())
-		{
-			arr.add(Position.get(col, row));
-		}
-		return false;
-	}
-
 }

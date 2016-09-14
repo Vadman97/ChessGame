@@ -1,27 +1,31 @@
 package vad;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AIPlayer implements Player
 {
+	public static final int CACHE_INITIAL_SIZE = 2000003;
+	public static final float CACHE_LOAD_FACTOR = 0.75f;
+	public static final int CACHE_NUM_SHARDS = 8;
+
+	public static final int MAX = Integer.MAX_VALUE;
+	public static final int MIN = -MAX;
+	public static final int SEARCH_PRINT_DELAY = 2000; //ms
+
+	private static final boolean UI_ENABLED = false;
+	
 	int playerColor;
 	int depth = 4;
 	GameBoard realBoard;
-	HashMap<CompressedGameBoard, TranspositionTableEntry> cache = new HashMap<>();
+	ConcurrentHashMap<CompressedGameBoard, TranspositionTableEntry> cache = new ConcurrentHashMap<>(CACHE_INITIAL_SIZE, CACHE_LOAD_FACTOR, CACHE_NUM_SHARDS);
 
 	ChessGUI gui;
 
 	int protectedValWeight = 2;
-
-	public static final int MAX = Integer.MAX_VALUE;
-	public static final int MIN = -MAX;
+	int benchMark;
 	
 	public boolean thinking = false;
-
-	private static final boolean UI_ENABLED = false;
-	
-	int benchMark;
 
 	public AIPlayer(int playerColor)
 	{
@@ -41,20 +45,16 @@ public class AIPlayer implements Player
 		long end = System.currentTimeMillis();
 		double timeSec = (end - start) / 1000.;
 		
-		// increase search depth if our search space gets smaller
 		if (board.getNumAllPieces() < 18) {
-			if (depth >= 4 && board.getNumAllPieces() < 12) {
+			// increase search depth if our search space gets smaller
+			if (timeSec < 1.0 && depth < 10) {
 				depth += 2;
-			} else {
-				depth = 6;
+			} else if (timeSec > 15.) {
+				depth -= 2;
 			}
-		} else if (timeSec < 0.25) {
-			depth += 2;
-		} else if (timeSec > 15.) {
-			depth -= 2;
 		}
 		
-		System.out.println("AI Think time: " + timeSec + " depth: " + depth);
+		System.out.println("AI Think time: " + timeSec + " depth: " + depth + " pieces: " + board.getNumAllPieces());
 		thinking = false;
 		return move;
 	}
@@ -70,8 +70,8 @@ public class AIPlayer implements Player
 		if (UI_ENABLED)
 			gui.updateBoard(board);
 	}
-
-	public int negamax(GameBoard board, int alpha, int beta, int d)
+	
+	public int negascout(GameBoard board, int alpha, int beta, int d)
 	{
 		CompressedGameBoard cgb = new CompressedGameBoard(board);
 		if (cache.containsKey(cgb))
@@ -98,62 +98,8 @@ public class AIPlayer implements Player
 			int score = evaluateBoard(board);
 			if (board.currentColor != playerColor)
 				score = -score;
-			cache.put(cgb, new TranspositionTableEntry(TranspositionTableEntry.PRECISE, score, 0));
-			benchMark++;
-			return score;
-		}
-		for (Move child : board.getAllPossibleMoves(board.currentColor))
-		{
-			board.apply(child);
-			int score = -negamax(board, -beta, -alpha, d - 1);
 			
-			board.undo(child);
-			if (score > alpha)
-				alpha = score;
-			if (alpha >= beta) // was >=
-			{
-				break;
-			}
-		}
-		int cacheFlag=alpha<=originalAlpha?TranspositionTableEntry.UPPER_BOUND:(alpha>=beta?TranspositionTableEntry.LOWER_BOUND:TranspositionTableEntry.PRECISE);
-		cache.put(cgb, new TranspositionTableEntry(cacheFlag, alpha, d));
-		return alpha;
-	}
-	
-	public int negascout(GameBoard board, int alpha, int beta, int d)
-	{
-		CompressedGameBoard cgb = new CompressedGameBoard(board);
-		if (cache.containsKey(cgb))
-		{
-			synchronized (this) {
-				TranspositionTableEntry entry=cache.get(cgb);
-				if(entry.isLowerBound()){
-					if(entry.getValue()>alpha){
-						alpha=entry.getValue();
-					}
-				}else if(entry.isUpperBound()){
-					if(entry.getValue()<beta){
-						beta=entry.getValue();
-					}
-				}else{
-					return entry.getValue();
-				}
-				if(alpha>=beta){
-					return entry.getValue();
-				}
-			}
-		}
-		int originalAlpha=alpha;
-		if (d == 0)
-		{
-			int score = evaluateBoard(board);
-			if (board.currentColor != playerColor)
-				score = -score;
-			synchronized (this) {
-				cache.put(cgb, new TranspositionTableEntry(TranspositionTableEntry.PRECISE, score, 0));
-			}
-			if (benchMark % 20000 == 0)
-				System.out.println("Searched " + benchMark + " nodes.");
+			cache.put(cgb, new TranspositionTableEntry(TranspositionTableEntry.PRECISE, score, 0));
 			benchMark++;
 			return score;
 		}
@@ -182,9 +128,7 @@ public class AIPlayer implements Player
 			}
 		}
 		int cacheFlag=alpha<=originalAlpha?TranspositionTableEntry.UPPER_BOUND:(alpha>=beta?TranspositionTableEntry.LOWER_BOUND:TranspositionTableEntry.PRECISE);
-		synchronized (this) {
-			cache.put(cgb, new TranspositionTableEntry(cacheFlag, alpha, d));
-		}
+		cache.put(cgb, new TranspositionTableEntry(cacheFlag, alpha, d));
 		return alpha;
 	}
 	
@@ -205,30 +149,34 @@ public class AIPlayer implements Player
 		}
 		
 		public void run() {
-			int score;
-			if(first){
-				first=false;
-				board.apply(startMove);
-				score = -negascout(board, -alpha-1, -alpha, d - 1);
-				if(alpha<score){
-					score=-negascout(board, MIN, -score, d-1);
+			try{
+				int score;
+				if(first){
+					first=false;
+					board.apply(startMove);
+					score = -negascout(board, -alpha-1, -alpha, d - 1);
+					if(alpha<score){
+						score=-negascout(board, MIN, -score, d-1);
+					}
+					board.undo(startMove);
+				}else{
+					board.apply(startMove);
+					score = -negascout(board, MIN, -alpha, d - 1);
+					board.undo(startMove);
 				}
-				board.undo(startMove);
-			}else{
-				board.apply(startMove);
-				score = -negascout(board, MIN, -alpha, d - 1);
-				board.undo(startMove);
+				if (score > alpha)
+				{
+					alpha = score;
+					best = startMove;
+				}
+				finished = true;
+			} catch (NullPointerException e) {
+				e.printStackTrace();
 			}
-			if (score > alpha)
-			{
-				alpha = score;
-				best = startMove;
-			}
-			finished = true;
 		}
 	}
 	
-	public Move getBestMoveNegamax(GameBoard board, int d)
+	public Move getBestMoveNegascout(GameBoard board, int d)
 	{
 		ArrayList<NegascoutThread> threads = new ArrayList<NegascoutThread>();
 		for (Move child : board.getAllPossibleMoves(board.currentColor))
@@ -238,6 +186,9 @@ public class AIPlayer implements Player
 			threads.add(t);
 		}
 		System.out.println(threads.size() + " threads started!");
+		
+		long start = System.currentTimeMillis();
+		long lastPrint = start;
 		
 		while (true) {
 			boolean finished = true;
@@ -249,8 +200,10 @@ public class AIPlayer implements Player
 			}
 			if (!finished) {
 				try {
-					if (benchMark % 20000 == 0)
-						System.out.println("Searched " + benchMark + " nodes.");
+					if (System.currentTimeMillis() - lastPrint >= SEARCH_PRINT_DELAY) {
+						System.out.println("Elapsed: " + (System.currentTimeMillis() - start) / 1000. + "s. Searched " + benchMark + " nodes.");
+						lastPrint = System.currentTimeMillis();
+					}
 					Thread.sleep(50);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
@@ -274,75 +227,21 @@ public class AIPlayer implements Player
 		cache.clear();
 		return best;
 	}
-
-//	public Move getBestMoveNegamax(GameBoard board, int d)
-//	{
-//		Move best = null;
-//		int alpha = MIN;
-//		boolean first=true;
-//		for (Move child : board.getAllPossibleMoves(board.currentColor))
-//		{
-//			int score;
-//			if(first){
-//				first=false;
-//				board.apply(child);
-//				score = -negascout(board, -alpha-1, -alpha, d - 1);
-//				if(alpha<score){
-//					score=-negascout(board, MIN, -score, d-1);
-//				}
-//				board.undo(child);
-//			}else{
-//				board.apply(child);
-//				score = -negascout(board, MIN, -alpha, d - 1);
-//				board.undo(child);
-//			}
-//			if (score > alpha)
-//			{
-//				alpha = score;
-//				best = child;
-//			}
-//		}
-//		System.out.println("Best score: " + alpha);
-//		cache.clear();
-//		return best;
-//	}
-	
-	public Move getBestMoveNegascout(GameBoard board, int d)
-	{
-		Move best = null;
-		int alpha = MIN;
-		for (Move child : board.getAllPossibleMoves(board.currentColor))
-		{
-			board.apply(child);
-			
-			int score = -negascout(board, MIN, -alpha, d - 1);
-			board.undo(child);
-			if (score > alpha)
-			{
-				alpha = score;
-				best = child;
-			}
-		}
-		
-		System.out.println("Best score: " + alpha);
-		cache.clear();
-		return best;
-	}
 	
 	public Move getBestMoveMTDF(GameBoard board, int d){
-//		int score=0;
-//		int lb=MIN;
-//		int ub=MAX;
-//		do{
-//			int beta=score==lb?score+1:score;
-//			score=negamax(board, beta-1, beta, d);
-//			if(score<beta){
-//				ub=score;
-//			}else{
-//				lb=score;
-//			}
-//		}while(lb<ub);
-		return getBestMoveNegamax(board, d);
+		int score=0;
+		int lb=MIN;
+		int ub=MAX;
+		do{
+			int beta=score==lb?score+1:score;
+			score=negascout(board, beta-1, beta, d);
+			if(score<beta){
+				ub=score;
+			}else{
+				lb=score;
+			}
+		}while(lb<ub);
+		return getBestMoveNegascout(board, d);
 	}
 	
 	public Move getBestMove(GameBoard board, int d)
@@ -355,19 +254,24 @@ public class AIPlayer implements Player
 		 * which is the optimal result.
 		 */
 		System.out.println("Thinking.....");
-		benchMark=0;
-		Move ret= getBestMoveMTDF(board, d);
-		System.out.println(benchMark+" nodes searched");
+		benchMark = 0;
+		Move ret = getBestMoveNegascout(board, d);
+		System.out.println(benchMark + " nodes searched");
 		return ret;
 	}
 
 	public int evaluateBoard(GameBoard board)
 	{
-//		long start = System.nanoTime();
+		if (board.isCheckMate(playerColor))
+			return -10000;
+		else if (board.isCheckMate(Piece.getOppositeColor(playerColor)))
+			return 10000;
+		
+		//long start = System.nanoTime();
 		// TODO(vadim): change the GameBoard to save an array of which squares are under attack/defended etc
 		int score = 0;
 
-		int numK = 0, numEK = 0;
+		//int numK = 0, numEK = 0;
 		int numQ = 0, numEQ = 0;
 		int numR = 0, numER = 0;
 		int numB = 0, numEB = 0;
@@ -387,7 +291,7 @@ public class AIPlayer implements Player
 		int castleEVal = 0;
 		int piecesOnStartRow = 0;
 		int piecesEOnStartRow = 0;
-
+		
 //		mobility = board.getAllPossibleMoves(playerColor).size();
 //		EMobility = board.getAllPossibleMoves(playerColor == Piece.BLACK ? Piece.WHITE : Piece.BLACK).size();
 		
@@ -407,14 +311,16 @@ public class AIPlayer implements Player
 
 				if (p.getColor() == playerColor) // piece of computer
 				{
-					if (j == 0 && p.getType() != Piece.KING)
+					if (j == 0 && p.getType() != Piece.KING && p.getType() != Piece.ROOK && p.getType() != Piece.QUEEN)
 						piecesOnStartRow += 3;
-//					mobility += MoveHelper.getAllMoves4PieceWithoutValidation(board, pos).size();
+					else if (j == 0 && p.getType() == Piece.QUEEN)
+						piecesOnStartRow += 1;
+					mobility += MoveHelper.getAllMoves4PieceWithoutValidation(board, pos).size();
 					switch (p.getType())
 					{
 					case Piece.KING:
-//						castleVal = MoveHelper.canCastleLeft(board, playerColor, i, j) ? 1 : 0; //hasCastled
-						numK++;
+						castleVal = board.hasCastled(playerColor) ? 1 : 0;
+						//numK++;
 						break;
 					case Piece.QUEEN:
 						numQ++;
@@ -439,7 +345,7 @@ public class AIPlayer implements Player
 						 * Position.get(i, j), false).size() == 0)
 						 * blockedPawns++;
 						 */
-						mobility += MoveHelper.getAllMoves4PieceWithoutValidation(board, pos).size();
+						//mobility += MoveHelper.getAllMoves4PieceWithoutValidation(board, pos).size();
 						break;
 					}
 					
@@ -448,14 +354,16 @@ public class AIPlayer implements Player
 					 
 				} else
 				{
-					if (j == 7 && p.getType() != Piece.KING)
+					if (j == 0 && p.getType() != Piece.KING && p.getType() != Piece.ROOK && p.getType() != Piece.QUEEN)
 						piecesEOnStartRow += 3;
-//					EMobility += MoveHelper.getAllMoves4PieceWithoutValidation(board, pos).size();
+					else if (j == 0 && p.getType() == Piece.QUEEN)
+						piecesEOnStartRow += 1;
+					EMobility += MoveHelper.getAllMoves4PieceWithoutValidation(board, pos).size();
 					switch (p.getType())
 					{
 					case Piece.KING:
-//						castleEVal = MoveHelper.canCastleLeft(board, playerColor, i, j) ? 1 : 0;
-						numEK++;
+						castleEVal = board.hasCastled(Piece.getOppositeColor(playerColor)) ? 1 : 0;
+						//numEK++;
 						break;
 					case Piece.QUEEN:
 						numEQ++;
@@ -480,7 +388,7 @@ public class AIPlayer implements Player
 						 * Position.get(i, j), false).size() == 0)
 						 * blockedEPawns++;
 						 */
-						EMobility += MoveHelper.getAllMoves4PieceWithoutValidation(board, pos).size();
+						//EMobility += MoveHelper.getAllMoves4PieceWithoutValidation(board, pos).size();
 						break;
 					}
 					
@@ -500,20 +408,21 @@ public class AIPlayer implements Player
 ////				1 * (mobility - EMobility) + 
 //				// 8 * (fProtected - eProtected)
 //				- 2 * (castleVal - castleEVal);
-		score = 50 * (
-					32 * (numK - numEK) + 
+		score = 20 * (
+					//32 * (numK - numEK) + 
 					9 * (numQ - numEQ) + 
 					5 * (numR - numER) + 
 					3 * (numB - numEB + numN - numEN) + 
 					1 * (numP - numEP)
 					) + 
-				5 * (mobility - EMobility) + 
+				2 * (mobility - EMobility) + 
 				5 * (doubledEPawns - doubledPawns) + 
-				1 * (isolatedEPawns - isolatedPawns) +
-				0 * (castleVal - castleEVal) +
-				2 * (piecesEOnStartRow - piecesOnStartRow) + 
+				5 * (isolatedEPawns - isolatedPawns) +
+				30 * (castleVal - castleEVal) +
+				10 * (piecesEOnStartRow - piecesOnStartRow) + 
 				0 * (fProtected - eProtected)
 				;
+		
 //		System.out.println(((double)(System.nanoTime() - start)) * 1e-9);
 		return score;
 	}
