@@ -77,4 +77,14 @@ public class Move implements Serializable
 	{
 		return BitField.getBit(flags, R_ROOK_FLAG);
 	}
+	
+	public boolean equals(Move other) {
+		if (getStartPosition() == other.getStartPosition())
+			if (getDestPosition() == other.getDestPosition())
+				if (startPiece == other.startPiece)
+					if (killedPiece == other.killedPiece)
+						if (flags == other.flags)
+							return true;
+		return false;
+	}
 }

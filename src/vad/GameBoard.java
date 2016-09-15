@@ -393,4 +393,21 @@ public class GameBoard
 			whiteFlags=(byte) BitField.changeBit(whiteFlags, CASTLED, castled);
 		}
 	}
+	
+	public String toString() {
+		String out = "";
+		for (int i = 0; i < 8; i++) {
+			for (int j = 0; j < 8; j++) {
+				if (!isEmpty(Position.get(i, j))) {
+					out += getPiece(Position.get(i, j)).getType();
+				} else {
+					out += " ";
+				}
+				if (j != 7)
+					out += "|";
+			}
+			out += "\n";
+		}
+		return out;
+	}
 }
