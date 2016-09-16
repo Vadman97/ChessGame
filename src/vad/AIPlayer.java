@@ -4,7 +4,6 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.RecursiveTask;
 
 public class AIPlayer implements Player {
 	public static final int CACHE_INITIAL_SIZE = 2000003;
@@ -20,10 +19,11 @@ public class AIPlayer implements Player {
 	private static final boolean UI_ENABLED = false;
 
 	int playerColor;
-	int depth = 8;
+	int depth = 6;
 	GameBoard realBoard;
-	ConcurrentHashMap<CompressedGameBoard, TranspositionTableEntry> cache = new ConcurrentHashMap<>(CACHE_INITIAL_SIZE,
-			CACHE_LOAD_FACTOR, CACHE_NUM_SHARDS);
+	ConcurrentHashMap<CompressedGameBoard, TranspositionTableEntry> cache = new ConcurrentHashMap<>(CACHE_INITIAL_SIZE, CACHE_LOAD_FACTOR, CACHE_NUM_SHARDS);
+	
+	int globalAlpha = MAX, globalBeta = MIN;
 
 	ChessGUI gui;
 	GameBoard lastBoardConfig;
@@ -34,6 +34,15 @@ public class AIPlayer implements Player {
 	Random r = new Random();
 
 	public boolean thinking = false;
+	
+	public synchronized void updateGlobalAlpha(int alpha) {
+		System.out.println(this.globalAlpha + " " + alpha);
+		this.globalAlpha = alpha;
+	}
+	
+	public synchronized void updateGlobalBeta(int beta) {
+		this.globalBeta = beta;
+	}
 
 	public AIPlayer(int playerColor) {
 		this.playerColor = playerColor;
@@ -75,7 +84,7 @@ public class AIPlayer implements Player {
 		if (UI_ENABLED)
 			gui.updateBoard(board);
 	}
-
+	
 	public int negascout(GameBoard board, int alpha, int beta, int d) {
 		CompressedGameBoard cgb = new CompressedGameBoard(board);
 		// check cache in case this board was already evaluated
@@ -128,59 +137,24 @@ public class AIPlayer implements Player {
 				score = -negascout(board, -beta, -alpha, d - 1);
 				board.undo(child);
 			}
-			if (score > alpha)
+			if (score > alpha) {
 				alpha = score;
+				updateGlobalAlpha(alpha);
+			}
 			if (alpha >= beta) {
 				break;
 			}
 		}
 		int cacheFlag = alpha <= originalAlpha ? TranspositionTableEntry.UPPER_BOUND : (alpha >= beta ? TranspositionTableEntry.LOWER_BOUND : TranspositionTableEntry.PRECISE);
 		cache.put(cgb, new TranspositionTableEntry(cacheFlag, alpha, d));
+		
+//		if (cacheFlag == TranspositionTableEntry.UPPER_BOUND)
+//			updateGlobalAlpha(alpha);
+//		else if (cacheFlag == TranspositionTableEntry.LOWER_BOUND)
+//			updateGlobalBeta(beta);
 		return alpha;
 	}
 
-	private class NegascoutThread extends Thread {
-		Move startMove = null;
-		int d;
-		boolean first = false;
-		GameBoard board;
-
-		public int alpha = MIN;
-		public boolean finished = false;
-		public Move best = null;
-
-		public NegascoutThread(Move startMove, GameBoard board, int startD) {
-			this.startMove = startMove;
-			this.board = board.copy();
-			this.d = startD;
-		}
-
-		public void run() {
-			try {
-				int score;
-				if (first) {
-					board.apply(startMove);
-					score = -negascout(board, -alpha - 1, -alpha, d - 1);
-					if (alpha < score) {
-						score = -negascout(board, MIN, -score, d - 1);
-					}
-					board.undo(startMove);
-				} else {
-					board.apply(startMove);
-					score = -negascout(board, MIN, -alpha, d - 1);
-					board.undo(startMove);
-				}
-				if (score > alpha) {
-					alpha = score;
-					best = startMove;
-				}
-				finished = true;
-			} catch (NullPointerException e) {
-				e.printStackTrace();
-			}
-		}
-	}
-	
 	public Move getBestMoveNegamaxNoThreads(GameBoard board, int d)
 	{
 		Move best = null;
@@ -213,150 +187,64 @@ public class AIPlayer implements Player {
 		return best;
 	}
 	
-	public Move getBestMoveNegamaxTasks(GameBoard board, int d)
-	{
-		Move best = null;
-		int alpha = MIN;
-		boolean first=true;
-		for (Move child : board.getAllPossibleMoves(board.currentColor))
-		{
-			int score;
-			if(first){
-				first=false;
-				board.apply(child);
-				NegascoutTask t = new NegascoutTask(board, -alpha-1, -alpha, d - 1);
-				t.fork();
-				score = -t.join();
-				if(alpha<score){
-					t = new NegascoutTask(board, MIN, -score, d - 1);
-					t.fork();
-					score = -t.join();
-				}
-				board.undo(child);
-			}else{
-				board.apply(child);
-				NegascoutTask t = new NegascoutTask(board, MIN, -alpha, d - 1);
-				t.fork();
-				score = -t.join();
-				board.undo(child);
-			}
-			if (score > alpha)
-			{
-				alpha = score;
-				best = child;
-			}
+	private class NegascoutParallel extends Thread {
+		int d;
+		GameBoard board;
+
+		public int score;
+		Move move = null;
+		public boolean finished = false;
+
+		public NegascoutParallel(Move move, GameBoard board, int startD) {
+			this.move = move;
+			this.board = board.copy();
+			this.d = startD;
 		}
-		System.out.println("Best score: " + alpha);
-		cache.clear();
-		return best;
-	}
-	
-	public class NegascoutTask extends RecursiveTask<Integer> {
-		private static final long serialVersionUID = -5523431218258695565L;
-		
-		private GameBoard board;
-		private int alpha;
-		private int beta;
-		private int depth;
 
-	    public NegascoutTask(GameBoard board, int alpha, int beta, int depth) {
-	    	this.board = board;
-	    	this.alpha = alpha;
-	    	this.beta = beta;
-	    	this.depth = depth;
-	    }
-
-	    protected Integer compute() {
-	    	CompressedGameBoard cgb = new CompressedGameBoard(board);
-    		// check cache in case this board was already evaluated
-    		if (cache.containsKey(cgb)) {
-    			TranspositionTableEntry entry = cache.get(cgb);
-    			if (entry.isLowerBound()) {
-    				if (entry.getValue() > alpha) {
-    					alpha = entry.getValue();
-    				}
-    			} else if (entry.isUpperBound()) {
-    				if (entry.getValue() < beta) {
-    					beta = entry.getValue();
-    				}
-    			} else {
-    				return entry.getValue();
-    			}
-    			if (alpha >= beta) {
-    				return entry.getValue();
-    			}
-    		}
-
-	        if(this.depth > 1) {
-	         // if we are not at the bottom of the tree, continue down the tree to return score
-	    		boolean first = true;
-	    		int originalAlpha = alpha;
-	    		for (Move child : board.getAllPossibleMoves(board.currentColor)) {
-	    			int score = 0;
-	    			
-	    			if (first) {
-	    				first = false;
-	    				board.apply(child);
-	    				NegascoutTask t = new NegascoutTask(board, -alpha - 1, -alpha, depth - 1);
-	    				t.fork();
-	    				score = -t.join();
-	    				if (alpha < score && score < beta) {
-	    					t = new NegascoutTask(board, -beta, -score, depth - 1);
-	    					t.fork();
-	    					score = -t.join();
-	    				}
-	    				board.undo(child);
-	    			} else {
-	    				board.apply(child);
-	    				NegascoutTask t = new NegascoutTask(board, -beta, -alpha, depth - 1);
-	    				t.fork();
-	    				score = -t.join();
-	    				board.undo(child);
-	    			}
-	    			if (score > alpha)
-	    				alpha = score;
-	    			if (alpha >= beta) {
-	    				break;
-	    			}
-	    		}
-	    		int cacheFlag = alpha <= originalAlpha ? TranspositionTableEntry.UPPER_BOUND : (alpha >= beta ? TranspositionTableEntry.LOWER_BOUND : TranspositionTableEntry.PRECISE);
-	    		cache.put(cgb, new TranspositionTableEntry(cacheFlag, alpha, depth));
-	    		return alpha;
-	        } else {
-	    		// we are at the bottom of the tree, return the board score
-    			int score = evaluateBoard(board);
-    				
-    			if (board.currentColor != playerColor)
-    				score = -score;
-
-    			cache.put(cgb, new TranspositionTableEntry(TranspositionTableEntry.PRECISE, score, 0));
-    			benchMark++;
-    			return score;	    		
-	        }
-	    }
-	}
-
+		public void run() {
+			board.apply(move);
+			score = -negascout(board, -globalBeta, -globalAlpha, d - 1);
+			board.undo(move);
+			finished = true;
+			
+			if (score < globalAlpha)
+				updateGlobalAlpha(score);
+		}
+	}	
 
 	public Move getBestMoveNegascout(GameBoard board, int d) {
-		ArrayList<NegascoutThread> threads = new ArrayList<NegascoutThread>();
+		ArrayList<NegascoutParallel> threads = new ArrayList<NegascoutParallel>();
+		
+		ArrayList<Move> moves =  board.getAllPossibleMoves(board.currentColor);
+		
 		boolean first = true;
-		for (Move child : board.getAllPossibleMoves(board.currentColor)) {
-			NegascoutThread t = new NegascoutThread(child, board, d);
+		
+		updateGlobalAlpha(MIN);
+		for (Move child : moves) {
+			int score = 0;
+			
 			if (first) {
-				t.first = true;
 				first = false;
+				board.apply(child);
+				score = -negascout(board, -globalAlpha - 1, -globalAlpha, d - 1);
+				if (globalAlpha < score && score < globalBeta) {
+					score = -negascout(board, -globalBeta, -score, d - 1);
+				}
+				board.undo(child);
+				System.out.println("First A: " + globalAlpha + " B: " + globalBeta);
+			} else {
+				NegascoutParallel t = new NegascoutParallel(child, board, d);
+				threads.add(t);
+				t.start();
 			}
-			t.start();
-			threads.add(t);
 		}
-		System.out.println(threads.size() + " threads started!");
 
 		long start = System.currentTimeMillis();
 		long lastPrint = start;
 
 		while (true) {
 			boolean finished = true;
-			for (NegascoutThread t : threads) {
+			for (NegascoutParallel t : threads) {
 				if (!t.finished) {
 					finished = false;
 					break;
@@ -380,18 +268,19 @@ public class AIPlayer implements Player {
 				break;
 			}
 		}
+		System.out.println("Final A: " + globalAlpha + " B: " + globalBeta);
 
 		Move best = null;
-		int alpha = MIN;
+		int score = MIN;
 
-		for (NegascoutThread t : threads) {
-			if (t.alpha >= alpha) {
-				alpha = t.alpha;
-				best = t.best;
+		for (NegascoutParallel t : threads) {
+			if (t.score >= score) {
+				score = t.score;
+				best = t.move;
 			}
 		}
 
-		System.out.println("Best score: " + alpha);
+		System.out.println("Best score: " + score);
 		cache.clear();
 		return best;
 	}
@@ -420,9 +309,8 @@ public class AIPlayer implements Player {
 		 */
 		System.out.println("Thinking.....");
 		benchMark = 0;
-		Move ret = getBestMoveNegamaxNoThreads(board, d);
-		//Move ret = getBestMoveNegascout(board, d);
-		//Move ret = getBestMoveNegamaxTasks(board, d);
+		//Move ret = getBestMoveNegamaxNoThreads(board, d);
+		Move ret = getBestMoveNegascout(board, d);
 		System.out.println(benchMark + " nodes searched");
 		return ret;
 	}
