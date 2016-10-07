@@ -36,7 +36,7 @@ public class AIPlayer implements Player {
 	public boolean thinking = false;
 	
 	public synchronized void updateGlobalAlpha(int alpha) {
-		System.out.println(this.globalAlpha + " " + alpha);
+//		System.out.println(this.globalAlpha + " " + alpha);
 		this.globalAlpha = alpha;
 	}
 	
@@ -142,6 +142,7 @@ public class AIPlayer implements Player {
 				updateGlobalAlpha(alpha);
 			}
 			if (alpha >= beta) {
+//				updateGlobalBeta(beta);
 				break;
 			}
 		}
@@ -152,6 +153,7 @@ public class AIPlayer implements Player {
 //			updateGlobalAlpha(alpha);
 //		else if (cacheFlag == TranspositionTableEntry.LOWER_BOUND)
 //			updateGlobalBeta(beta);
+		
 		return alpha;
 	}
 
@@ -207,8 +209,12 @@ public class AIPlayer implements Player {
 			board.undo(move);
 			finished = true;
 			
-			if (score < globalAlpha)
-				updateGlobalAlpha(score);
+//			if (score < globalAlpha)
+//				updateGlobalAlpha(score);
+			
+//			if (score > globalBeta) {
+//				updateGlobalAlpha(score);
+//			}
 		}
 	}	
 
@@ -220,6 +226,7 @@ public class AIPlayer implements Player {
 		boolean first = true;
 		
 		updateGlobalAlpha(MIN);
+		updateGlobalBeta(MAX);
 		for (Move child : moves) {
 			int score = 0;
 			
@@ -274,9 +281,10 @@ public class AIPlayer implements Player {
 		int score = MIN;
 
 		for (NegascoutParallel t : threads) {
-			if (t.score >= score) {
+			if (t.score > score) {
 				score = t.score;
 				best = t.move;
+				System.out.println("Best move: " + best);
 			}
 		}
 
