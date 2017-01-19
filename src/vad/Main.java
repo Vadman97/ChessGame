@@ -46,7 +46,8 @@ public class Main
 
 	public static void main(String[] args) throws IOException
 	{
-		Player p1 = new UserPlayer(Piece.WHITE);
+		//Player p1 = new UserPlayer(Piece.WHITE);
+		Player p1 = new DebugPlayer(Piece.WHITE);
 		Player p2;
 		if (NETWORKING)
 		{

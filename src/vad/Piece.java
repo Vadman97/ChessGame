@@ -10,7 +10,8 @@ public class Piece implements Serializable
 	private static Piece[][] allPieces=new Piece[2][6];
 	public static final int	QUEEN = 1, KING = 0, ROOK = 2, KNIGHT = 3, BISHOP = 4, PAWN = 5;
 	public static final int	BLACK=0, WHITE=1;
-	private static final String[] NAMES={"King", "Queen", "Rook", "Knight", "Bishop", "Pawn"};
+	public static final int[] COLORS = {BLACK, WHITE};
+	public static final String[] NAMES={"King", "Queen", "Rook", "Knight", "Bishop", "Pawn"};
 	
 	public static int getOppositeColor(int color){
 		return 1-color;

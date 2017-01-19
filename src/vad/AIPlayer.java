@@ -19,6 +19,7 @@ public class AIPlayer implements Player {
 	private static final boolean UI_ENABLED = false;
 	
 	int playerColor;
+	int enemyColor;
 	int depth = 6;
 	GameBoard realBoard;
 	ConcurrentHashMap<CompressedGameBoard, TranspositionTableEntry> cache = new ConcurrentHashMap<>(CACHE_INITIAL_SIZE, CACHE_LOAD_FACTOR, CACHE_NUM_SHARDS);
@@ -47,6 +48,7 @@ public class AIPlayer implements Player {
 
 	public AIPlayer(int playerColor) {
 		this.playerColor = playerColor;
+		this.enemyColor = Piece.getOppositeColor(this.playerColor);
 		if (UI_ENABLED)
 			gui = new ChessGUI(null, playerColor);
 	}
@@ -420,8 +422,8 @@ public class AIPlayer implements Player {
 		benchMark = 0;
 		long start = System.nanoTime();
 
-		Move ret = getBestMoveMTDF(board, d);
-//		Move ret = getBestMoveNegamaxNoThreads(board, d);
+//		Move ret = getBestMoveMTDF(board, d);
+		Move ret = getBestMoveNegamaxNoThreads(board, d);
 //		Move ret = getBestMoveNegascout(board, d);
 		double time = (System.nanoTime() - start) / 1.0e9;
 		System.out.println(benchMark + " nodes searched in " + time);
@@ -430,15 +432,32 @@ public class AIPlayer implements Player {
 		System.out.println("Global alpha: " + globalAlpha + " beta: " + globalBeta);
 		return ret;
 	}
+	
+	
 
 	public int evaluateBoard(GameBoard board) {
-//		if (board.isCheckMate(playerColor))
-//			return -10000;
-//		else if (board.isCheckMate(Piece.getOppositeColor(playerColor)))
-//			return 10000;
-
-		// TODO(vadim): change the GameBoard to save an array of which squares
-		// are under attack/defended etc
+		int score = 0;
+		
+		int[][] countPieces = new int[Piece.COLORS.length][Piece.NAMES.length];
+		
+		for (int col = 0; col < GameBoard.WIDTH; col++) {
+			for (int row = 0; row < GameBoard.HEIGHT; row++) {
+				Piece piece = board.getPiece(Position.get(col, row));
+				if (piece != null)
+					countPieces[piece.getColor()][piece.getType()]++;
+			}
+		}
+		
+		score += 1 * (countPieces[playerColor][Piece.PAWN] - countPieces[enemyColor][Piece.PAWN]);
+		score += 3 * (countPieces[playerColor][Piece.BISHOP] - countPieces[enemyColor][Piece.BISHOP]);
+		score += 3 * (countPieces[playerColor][Piece.KNIGHT] - countPieces[enemyColor][Piece.KNIGHT]);
+		score += 5 * (countPieces[playerColor][Piece.ROOK] - countPieces[enemyColor][Piece.ROOK]);
+		score += 9 * (countPieces[playerColor][Piece.QUEEN] - countPieces[enemyColor][Piece.QUEEN]);
+		
+		return score;
+	}
+	
+	public int oldEvaluateBoard(GameBoard board) {
 		int score = 0;
 
 		 int numK = 0, numEK = 0;
@@ -447,31 +466,10 @@ public class AIPlayer implements Player {
 		int numB = 0, numEB = 0;
 		int numN = 0, numEN = 0;
 		int numP = 0, numEP = 0;
-		int doubledPawns = 0;
-		int doubledEPawns = 0;
-		// int blockedPawns = 0;
-		// int blockedEPawns = 0;
-		int isolatedPawns = 0;
-		int isolatedEPawns = 0;
-//		int mobility = 0;
-//		int EMobility = 0;
-		int fProtected = 0;
-		int eProtected = 0;
-		int castleVal = 0;
-		int castleEVal = 0;
-		int piecesOnStartRow = 0;
-		int piecesEOnStartRow = 0;
 
-		// ArrayList<Move> fMoves =
-		// board.getAllPossibleMovesWithDefend(playerColor);
-		// ArrayList<Move> eMoves =
-		// board.getAllPossibleMovesWithDefend(Piece.getOppositeColor(playerColor));
 
 		for (int i = 0; i < 8; i++) // col
 		{
-			
-			boolean columnHasPawnF = false;
-			boolean columnHasPawnE = false;
 			for (int j = 0; j < 8; j++) // row
 			{
 				Position pos = Position.get(i, j);
@@ -482,14 +480,8 @@ public class AIPlayer implements Player {
 				
 				if (p.getColor() == playerColor) // piece of computer
 				{
-					if (j == 0 && piece_type != Piece.KING && piece_type != Piece.ROOK && piece_type != Piece.QUEEN)
-						piecesOnStartRow += 3;
-					else if (j == 0 && piece_type == Piece.QUEEN)
-						piecesOnStartRow += 1;
-					//mobility += MoveHelper.getAllMoves4PieceWithoutValidation(board, pos).size();
 					switch (piece_type) {
 					case Piece.KING:
-						castleVal = board.hasCastled(playerColor) ? 1 : 0;
 						 numK++;
 						break;
 					case Piece.QUEEN:
@@ -502,35 +494,11 @@ public class AIPlayer implements Player {
 						numN++;
 					case Piece.PAWN:
 						numP++;
-						if (columnHasPawnF)
-							doubledPawns++;
-						columnHasPawnF = true;
-						if (i == 0 || i == 7)
-							isolatedPawns++;
-						if (j == 1) {
-							piecesOnStartRow++;
-						}
-						/*
-						 * if (MoveHelper.getAllMoves4Piece(board,
-						 * Position.get(i, j), false).size() == 0)
-						 * blockedPawns++;
-						 */
 						break;
 					}
-
-					// if (MoveHelper.isProtected(board, Position.get(i,j),
-					// fMoves))
-					// fProtected++;
-
 				} else {
-					if (j == 0 && piece_type != Piece.KING && piece_type != Piece.ROOK && piece_type != Piece.QUEEN)
-						piecesEOnStartRow += 3;
-					else if (j == 0 && piece_type == Piece.QUEEN)
-						piecesEOnStartRow += 1;
-					//EMobility += MoveHelper.getAllMoves4PieceWithoutValidation(board, pos).size();
 					switch (piece_type) {
 					case Piece.KING:
-						castleEVal = board.hasCastled(Piece.getOppositeColor(playerColor)) ? 1 : 0;
 						 numEK++;
 						break;
 					case Piece.QUEEN:
@@ -543,25 +511,8 @@ public class AIPlayer implements Player {
 						numEN++;
 					case Piece.PAWN:
 						numEP++;
-						if (columnHasPawnE)
-							doubledEPawns++;
-						columnHasPawnE = true;
-						if (i == 0 || i == 7)
-							isolatedEPawns++;
-						if (j == 6) {
-							piecesEOnStartRow++;
-						}
-						/*
-						 * if (MoveHelper.getAllMoves4Piece(board,
-						 * Position.get(i, j), false).size() == 0)
-						 * blockedEPawns++;
-						 */
 						break;
 					}
-
-					// if (MoveHelper.isProtected(board, Position.get(i,j),
-					// eMoves))
-					// eProtected++;
 				}
 			}
 		}
@@ -572,123 +523,8 @@ public class AIPlayer implements Player {
 						5 * (numR - numER) + 
 						3 * (numB - numEB + numN - numEN) + 
 						1 * (numP - numEP)
-					) + 
-				//2 * (mobility - EMobility) + 
-				1 * (doubledEPawns - doubledPawns) + 
-				1 * (isolatedEPawns - isolatedPawns) + 
-				2 * (castleVal - castleEVal) + 
-				1 * (piecesEOnStartRow - piecesOnStartRow) + 
-				0 * (fProtected - eProtected);
+					); 
 
-//		if (board.currentColor == playerColor)
-//			if (board != null && lastBoardConfig != null) {
-//				if (new CompressedGameBoard(board).equals(new CompressedGameBoard(lastBoardConfig)))
-//					score -= REPEATED_MOVE_PENALTY;
-//			}
-		
-		return score;
-	}
-
-	public int oldEvaluateBoard(GameBoard board) {
-		// if can kill, good
-		// for each piece close to king, good
-		// if can kill better piece very good
-		// TODO add more incentive to kill enemy.
-		// TODO add attack weight
-		// TODO Make sure protectedVal and attackValFriendly work
-		// TODO Punish for pieces on edges, good to move out pieces
-		// TODO if queen attacker is protected, god otherwise bad
-		int score = 0;
-
-		for (int i = 0; i < 8; i++) {
-			for (int j = 0; j < 8; j++) {
-				if (board.getPiece(Position.get(i, j)) == null)
-					continue;
-				ArrayList<Move> allPossibleMovesDef = board
-						.getAllPossibleMovesWithDefend(board.getPiece(Position.get(i, j)).getColor());
-				ArrayList<Move> allPossibleMovesReg = board
-						.getAllPossibleMoves(board.getPiece(Position.get(i, j)).getColor());
-
-				boolean isProtected = MoveHelper.isProtected(board, Position.get(i, j), allPossibleMovesDef);
-				int protectedVal = MoveHelper.protectedVal(board, Position.get(i, j), allPossibleMovesDef);
-
-				boolean isUnderAttack = MoveHelper.isUnderAttack(board, Position.get(i, j), allPossibleMovesReg);
-				int attackValFriendly = MoveHelper.attackVal(board, Position.get(i, j), allPossibleMovesReg,
-						playerColor);
-
-				int numPieces = board.getNumPieces(playerColor);
-				int numEnemyPieces = board.getNumPieces(Piece.getOppositeColor(playerColor));
-
-				int trueBoardPieces = realBoard.getNumPieces(playerColor);
-				int trueBoardEnemyPieces = realBoard.getNumPieces(Piece.getOppositeColor(playerColor));
-
-				Piece curPiece = board.getPiece(Position.get(i, j));
-
-				// System.out.println(protectedVal + " " + attackValFriendly);
-
-				if (board.currentColor == playerColor) // ai player
-				{
-					if (trueBoardPieces > numPieces)
-						score -= 20;
-					if (trueBoardEnemyPieces < trueBoardPieces)
-						score += 75;
-
-					if (isProtected) {
-						if (numEnemyPieces <= 7) {
-							protectedValWeight = 15;
-						} else {
-							protectedValWeight = 6;
-						}
-						score += protectedVal * protectedValWeight;
-					} else {
-						if (!isUnderAttack)
-							score += 2;
-					}
-					if (isUnderAttack) {
-						/*
-						 * if (curPiece.getType() == Piece.QUEEN) { if
-						 * (!isProtected) score -= 350; else score -= 125; }
-						 */
-						score += (attackValFriendly * 20);
-						if (isProtected)
-							score += 10;
-					}
-					score += (numPieces * 3);
-					score += 2 * (6 - curPiece.getType());
-				} else
-				// enemy
-				{
-					if (trueBoardPieces < numPieces)
-						score += 15;
-					if (trueBoardEnemyPieces > trueBoardPieces)
-						score -= 35;
-
-					if (isProtected) {
-						if (numPieces <= 7) {
-							protectedValWeight = 14;
-						} else {
-							protectedValWeight = 3;
-						}
-						score -= protectedVal * protectedValWeight;
-					} else {
-						if (!isUnderAttack)
-							score -= 10;
-					}
-					if (isUnderAttack) {
-						/*
-						 * if (curPiece.getType() == Piece.QUEEN) { if
-						 * (!isProtected) score += 100; else score += 25; }
-						 */
-						score -= (attackValFriendly * 20);
-						if (isProtected)
-							score -= 10;
-					}
-					score -= (numEnemyPieces * 3);
-					score -= 2 * (6 - board.getPiece(Position.get(i, j)).getType());
-				}
-
-			}
-		}
 		return score;
 	}
 }

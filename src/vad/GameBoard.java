@@ -16,6 +16,9 @@ import com.nwgjb.commons.util.BitField;
  */
 public class GameBoard
 {
+	/*
+	 * Column, Row
+	 */
 	Piece[][] board;
 	int currentColor = Piece.WHITE;
 	byte whiteFlags;
@@ -26,15 +29,15 @@ public class GameBoard
 	public static final int R_ROOK_FLAG = 2;
 	public static final int CASTLED = 3;
 	public static final short WIDTH = 8;
-	//TODO three variables can be combined into two
+	public static final short HEIGHT = WIDTH;
 
 	public static final int[] STARTING_ROW =
 	{ Piece.ROOK, Piece.KNIGHT, Piece.BISHOP, Piece.QUEEN, Piece.KING, Piece.BISHOP, Piece.KNIGHT, Piece.ROOK };
 
 	public GameBoard()
 	{
-		board = new Piece[8][8];
-		for (int i = 0; i < 8; i++)
+		board = new Piece[WIDTH][HEIGHT];
+		for (int i = 0; i < WIDTH; i++)
 		{
 			setPiece(Position.get(i, 0), Piece.get(Piece.BLACK, STARTING_ROW[i]));
 			setPiece(Position.get(i, 7), Piece.get(Piece.WHITE, STARTING_ROW[i]));
@@ -43,7 +46,7 @@ public class GameBoard
 		}
 	}
 
-	public GameBoard(boolean _)
+	public GameBoard(boolean dummy)
 	{
 		board = new Piece[8][8];
 	}
