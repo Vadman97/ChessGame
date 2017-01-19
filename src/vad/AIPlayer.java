@@ -37,6 +37,9 @@ public class AIPlayer implements Player {
 
 	public boolean thinking = false;
 	
+	public long totalTime = 0;
+	public long totalNodes = 0;
+	
 	public synchronized void updateGlobalAlpha(int alpha) {
 //		System.out.println(this.globalAlpha + " " + alpha);
 		this.globalAlpha = alpha;
@@ -425,6 +428,8 @@ public class AIPlayer implements Player {
 //		Move ret = getBestMoveMTDF(board, d);
 		Move ret = getBestMoveNegamaxNoThreads(board, d);
 //		Move ret = getBestMoveNegascout(board, d);
+		totalNodes += benchMark;
+		totalTime += (System.nanoTime() - start) / 1e9;
 		double time = (System.nanoTime() - start) / 1.0e9;
 		System.out.println(benchMark + " nodes searched in " + time);
 		double tpn = benchMark / time;
