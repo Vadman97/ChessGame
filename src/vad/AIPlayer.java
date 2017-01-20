@@ -1,53 +1,53 @@
 package vad;
 
-import java.text.DecimalFormat;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class AIPlayer implements Player {
 	public static final int CACHE_INITIAL_SIZE = 2000003;
-	public static final float CACHE_LOAD_FACTOR = 0.6f;
+	public static final float CACHE_LOAD_FACTOR = 0.9f;
 	public static final int CACHE_NUM_SHARDS = 4;
 
 	public static final int MAX = Integer.MAX_VALUE;
 	public static final int MIN = -MAX;
 	public static final int SEARCH_PRINT_DELAY = 2000; // ms
-	
+
 	public static final int REPEATED_MOVE_PENALTY = 10000;
 
-	private static final boolean UI_ENABLED = false;
-	
+	private static final boolean UI_ENABLED = true;
+
 	int playerColor;
 	int enemyColor;
-	int depth = 6;
+	int depth = 4;
 	GameBoard realBoard;
-	ConcurrentHashMap<CompressedGameBoard, TranspositionTableEntry> cache = new ConcurrentHashMap<>(CACHE_INITIAL_SIZE, CACHE_LOAD_FACTOR, CACHE_NUM_SHARDS);
-	
-	private volatile int globalAlpha = MAX;
-	private volatile int globalBeta = MIN;
+//	ConcurrentHashMap<CompressedGameBoard, TranspositionTableEntry> cache = new ConcurrentHashMap<>(CACHE_INITIAL_SIZE,
+//			CACHE_LOAD_FACTOR, CACHE_NUM_SHARDS);
+	HashMap<CompressedGameBoard, TranspositionTableEntry> cache = new HashMap<>(CACHE_INITIAL_SIZE, CACHE_LOAD_FACTOR);
+
+	// private volatile int globalAlpha = MAX;
+	// private volatile int globalBeta = MIN;
 
 	ChessGUI gui;
 	GameBoard lastBoardConfig;
 
 	int protectedValWeight = 2;
 	int benchMark;
-	
+
 	Random r = new Random();
 
 	public boolean thinking = false;
-	
+
 	public long totalTime = 0;
 	public long totalNodes = 0;
-	
-	public synchronized void updateGlobalAlpha(int alpha) {
-//		System.out.println(this.globalAlpha + " " + alpha);
-		this.globalAlpha = alpha;
-	}
-	
-	public synchronized void updateGlobalBeta(int beta) {
-		this.globalBeta = beta;
-	}
+
+	// public synchronized void updateGlobalAlpha(int alpha) {
+	// // System.out.println(this.globalAlpha + " " + alpha);
+	// this.globalAlpha = alpha;
+	// }
+	//
+	// public synchronized void updateGlobalBeta(int beta) {
+	// this.globalBeta = beta;
+	// }
 
 	public AIPlayer(int playerColor) {
 		this.playerColor = playerColor;
@@ -59,6 +59,7 @@ public class AIPlayer implements Player {
 	@Override
 	public Move makeMove(CompressedGameBoard cpdboard) {
 		GameBoard board = cpdboard.getGameBoard();
+		evaluateBoard(board);
 		realBoard = board;
 		long start = System.currentTimeMillis();
 		thinking = true;
@@ -90,139 +91,54 @@ public class AIPlayer implements Player {
 		if (UI_ENABLED)
 			gui.updateBoard(board);
 	}
-	
-//	public int negascout(GameBoard board, int alpha, int beta, int d) {
-////		if (d % 2 == 0) {
-////			alpha = globalAlpha;
-////			beta = globalBeta;
-////		} else {
-////			alpha = -globalAlpha;
-////			beta = -globalBeta;
-////		}
-//		CompressedGameBoard cgb = new CompressedGameBoard(board);
-////		 check cache in case this board was already evaluated
-//		if (cache.containsKey(cgb)) {
-//			TranspositionTableEntry entry = cache.get(cgb);
-//			if (entry.isLowerBound()) {
-//				if (entry.getValue() > alpha) {
-//					alpha = entry.getValue();
-//				}
-//			} else if (entry.isUpperBound()) {
-//				if (entry.getValue() < beta) {
-//					beta = entry.getValue();
-//				}
-//			} else {
-//				return entry.getValue();
-//			}
-//			if (alpha >= beta) {
-//				return entry.getValue();
-//			}
-//		}
-//		
-//		// if we are at the bottom of the tree, return the board score
-//		if (d == 0) {
-//			int score = evaluateBoard(board);
-//				
-//			if (board.currentColor != playerColor)
-//				score = -score;
-//
-//			cache.put(cgb, new TranspositionTableEntry(TranspositionTableEntry.PRECISE, score, 0));
-//			benchMark++;
-//			return score;
-//		}
-//		
-//		// if we are not at the bottom of the tree, continue down the tree to return score
-//		boolean first = true;
-//		int originalAlpha = alpha;
-//		for (Move child : board.getAllPossibleMoves(board.currentColor)) {
-//			int score = 0;
-//			
-//			if (first) {
-//				first = false;
-//				board.apply(child);
-//				score = -negascout(board, -alpha - 1, -alpha, d - 1);
-//				if (alpha < score && score < beta) {
-//					score = -negascout(board, -beta, -score, d - 1);
-//				}
-//				board.undo(child);
-//			} else {
-//				board.apply(child);
-//				score = -negascout(board, -beta, -alpha, d - 1);
-//				board.undo(child);
-//			}
-//			if (score > alpha) {
-//				alpha = score;
-//				updateGlobalAlpha(alpha);
-//			}
-//			if (alpha >= beta) {
-//				break;
-//			}
-//		}
-//		int cacheFlag = alpha < originalAlpha ? TranspositionTableEntry.UPPER_BOUND : (alpha >= beta ? TranspositionTableEntry.LOWER_BOUND : TranspositionTableEntry.PRECISE);
-//		cache.put(cgb, new TranspositionTableEntry(cacheFlag, alpha, d));
-//		
-////		if (alpha <= originalAlpha)
-////			updateGlobalBeta(alpha);
-////		else if (alpha >= beta)
-////			updateGlobalAlpha(alpha);
-//		
-////		if (cacheFlag == TranspositionTableEntry.UPPER_BOUND) {
-////			updateGlobalBeta(alpha);
-////		}
-////		if (cacheFlag == TranspositionTableEntry.LOWER_BOUND) {
-////			updateGlobalAlpha(alpha);
-////		}
-//		
-//		return alpha;
-//	}
-	
+
 	public int negascout(GameBoard board, int alpha, int beta, int d) {
-//		if (d % 2 == 0) {
-//			alpha = globalAlpha;
-//			beta = globalBeta;
-//		} else {
-//			alpha = -globalAlpha;
-//			beta = -globalBeta;
-//		}
-		//???
-//		CompressedGameBoard cgb = new CompressedGameBoard(board);
-////		 check cache in case this board was already evaluated
-//		if (cache.containsKey(cgb)) {
-//			TranspositionTableEntry entry = cache.get(cgb);
-//			if (entry.isLowerBound()) {
-//				if (entry.getValue() > alpha) {
-//					alpha = entry.getValue();
-//				}
-//			} else if (entry.isUpperBound()) {
-//				if (entry.getValue() < beta) {
-//					beta = entry.getValue();
-//				}
-//			} else {
-//				return entry.getValue();
-//			}
-//			if (alpha >= beta) {
-//				return entry.getValue();
-//			}
-//		}
-		
+		// if (d % 2 == 0) {
+		// alpha = globalAlpha;
+		// beta = globalBeta;
+		// } else {
+		// alpha = -globalAlpha;
+		// beta = -globalBeta;
+		// }
+		// ???
+		CompressedGameBoard cgb = new CompressedGameBoard(board);
+		// check cache in case this board was already evaluated
+		if (cache.containsKey(cgb)) {
+			TranspositionTableEntry entry = cache.get(cgb);
+			if (entry.isLowerBound()) {
+				if (entry.getValue() > alpha) {
+					alpha = entry.getValue();
+				}
+			} else if (entry.isUpperBound()) {
+				if (entry.getValue() < beta) {
+					beta = entry.getValue();
+				}
+			} else {
+				return entry.getValue();
+			}
+			if (alpha >= beta) {
+				return entry.getValue();
+			}
+		}
+
 		// if we are at the bottom of the tree, return the board score
 		if (d == 0) {
 			int score = evaluateBoard(board);
-				
+
 			if (board.currentColor != playerColor)
 				score = -score;
 
-//			cache.put(cgb, new TranspositionTableEntry(TranspositionTableEntry.PRECISE, score, 0));
+			cache.put(cgb, new TranspositionTableEntry(TranspositionTableEntry.PRECISE, score, 0));
 			benchMark++;
 			return score;
 		}
-		
+
 		// if we are not at the bottom of the tree, continue down the tree to return score
 		boolean first = true;
-//		int originalAlpha = alpha;
+		int originalAlpha = alpha;
 		for (Move child : board.getAllPossibleMoves(board.currentColor)) {
 			int score = 0;
-			
+
 			if (first) {
 				first = false;
 				board.apply(child);
@@ -238,164 +154,57 @@ public class AIPlayer implements Player {
 			}
 			if (score > alpha) {
 				alpha = score;
-//				updateGlobalAlpha(alpha);
+				// updateGlobalAlpha(alpha);
 			}
 			if (alpha >= beta) {
 				break;
 			}
 		}
-//		int cacheFlag = alpha < originalAlpha ? TranspositionTableEntry.UPPER_BOUND : (alpha >= beta ? TranspositionTableEntry.LOWER_BOUND : TranspositionTableEntry.PRECISE);
-//		cache.put(cgb, new TranspositionTableEntry(cacheFlag, alpha, d));
-		
-//		if (alpha <= originalAlpha)
-//			updateGlobalBeta(alpha);
-//		else if (alpha >= beta)
-//			updateGlobalAlpha(alpha);
-		
-//		if (cacheFlag == TranspositionTableEntry.UPPER_BOUND) {
-//			updateGlobalBeta(alpha);
-//		}
-//		if (cacheFlag == TranspositionTableEntry.LOWER_BOUND) {
-//			updateGlobalAlpha(alpha);
-//		}
-		
+		int cacheFlag = alpha < originalAlpha ? TranspositionTableEntry.UPPER_BOUND
+				: (alpha >= beta ? TranspositionTableEntry.LOWER_BOUND : TranspositionTableEntry.PRECISE);
+		cache.put(cgb, new TranspositionTableEntry(cacheFlag, alpha, d));
+
+		// if (alpha <= originalAlpha)
+		// updateGlobalBeta(alpha);
+		// else if (alpha >= beta)
+		// updateGlobalAlpha(alpha);
+
+		// if (cacheFlag == TranspositionTableEntry.UPPER_BOUND) {
+		// updateGlobalBeta(alpha);
+		// }
+		// if (cacheFlag == TranspositionTableEntry.LOWER_BOUND) {
+		// updateGlobalAlpha(alpha);
+		// }
+
 		return alpha;
 	}
 
-	public Move getBestMoveNegamaxNoThreads(GameBoard board, int d)
-	{
+	public Move getBestMoveNegamaxNoThreads(GameBoard board, int d) {
 		Move best = null;
 		int alpha = MIN;
-		boolean first=true;
-		for (Move child : board.getAllPossibleMoves(board.currentColor))
-		{
+		boolean first = true;
+		for (Move child : board.getAllPossibleMoves(playerColor)) {
 			int score;
-			if(first){
-				first=false;
+			if (first) {
+				first = false;
 				board.apply(child);
-				score = -negascout(board, -alpha-1, -alpha, d - 1);
-				if(alpha<score){
+				score = -negascout(board, -alpha - 1, -alpha, d - 1);
+				if (alpha < score) {
 					score = -negascout(board, MIN, -score, d - 1);
 				}
 				board.undo(child);
-			}else{
+			} else {
 				board.apply(child);
 				score = -negascout(board, MIN, -alpha, d - 1);
 				board.undo(child);
 			}
-			if (score > alpha)
-			{
+			if (score > alpha) {
 				alpha = score;
 				best = child;
 			}
 		}
 		System.out.println("Best score: " + alpha);
-		cache.clear();
-		return best;
-	}
-	
-	private class NegascoutParallel extends Thread {
-		int d;
-		GameBoard board;
-
-		public int score;
-		Move move = null;
-		public boolean finished = false;
-
-		public NegascoutParallel(Move move, GameBoard board, int startD) {
-			this.move = move;
-			this.board = board.copy();
-			this.d = startD;
-		}
-
-		public void run() {
-			board.apply(move);
-			score = -negascout(board, -globalBeta, -globalAlpha, d - 1);
-			board.undo(move);
-			finished = true;
-			
-//			if (score < globalAlpha)
-//				updateGlobalAlpha(score);
-//			
-//			if (score > globalBeta) {
-//				updateGlobalAlpha(score);
-//			}
-		}
-	}	
-
-	public Move getBestMoveNegascout(GameBoard board, int d) {
-		ArrayList<NegascoutParallel> threads = new ArrayList<NegascoutParallel>();
-		
-		ArrayList<Move> moves =  board.getAllPossibleMoves(board.currentColor);
-		
-		boolean first = true;
-		
-		updateGlobalAlpha(MIN);
-		updateGlobalBeta(MAX);
-		for (Move child : moves) {
-			int score = 0;
-			
-			if (first) {
-				first = false;
-				board.apply(child);
-				score = -negascout(board, -globalAlpha - 1, -globalAlpha, d - 1);
-				if (globalAlpha < score && score < globalBeta) {
-					score = -negascout(board, -globalBeta, -score, d - 1);
-				}
-				board.undo(child);
-				System.out.println("First A: " + globalAlpha + " B: " + globalBeta);
-			} else {
-				NegascoutParallel t = new NegascoutParallel(child, board, d);
-				threads.add(t);
-				t.start();
-			}
-		}
-
-		long start = System.currentTimeMillis();
-		long lastPrint = start;
-
-		while (true) {
-			boolean finished = true;
-			for (NegascoutParallel t : threads) {
-				if (!t.finished) {
-					finished = false;
-					break;
-				}
-			}
-			if (!finished) {
-				try {
-					if (System.currentTimeMillis() - lastPrint >= SEARCH_PRINT_DELAY) {
-						System.out.print("Elapsed: " + (System.currentTimeMillis() - start) / 1000. + "s. Searched "
-								+ benchMark + " nodes. ");
-						DecimalFormat f = new DecimalFormat(".#");
-						System.out.print(f.format(1.0e6 / benchMark * (System.currentTimeMillis() - start) / 1000.) + "s per 1M nodes. ");
-						System.out.println("Alpha: " + globalAlpha + " Beta: " + globalBeta);
-						lastPrint = System.currentTimeMillis();
-					}
-						
-					Thread.sleep(50);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			} else {
-				break;
-			}
-		}
-		System.out.println("Final A: " + globalAlpha + " B: " + globalBeta);
-
-		Move best = null;
-		int score = MIN;
-
-		for (NegascoutParallel t : threads) {
-			if (t.score > score) {
-				score = t.score;
-				best = t.move;
-				System.out.println("Best move: " + best);
-			}
-		}
-
-		System.out.println("Best score: " + score);
-		cache.clear();
+		// cache.clear();
 		return best;
 	}
 
@@ -421,114 +230,97 @@ public class AIPlayer implements Player {
 		 * but MTD-F search less nodes All these three should give same results
 		 * - which is the optimal result.
 		 */
-		System.out.println("Thinking.....");
+		System.out.println("New AI Thinking.....");
 		benchMark = 0;
 		long start = System.nanoTime();
 
-//		Move ret = getBestMoveMTDF(board, d);
-		Move ret = getBestMoveNegamaxNoThreads(board, d);
-//		Move ret = getBestMoveNegascout(board, d);
+		Move ret = getBestMoveMTDF(board, d);
+		// Move ret = getBestMoveNegamaxNoThreads(board, d);
+		// Move ret = getBestMoveNegascout(board, d);
 		totalNodes += benchMark;
-		totalTime += (System.nanoTime() - start) / 1e9;
+		totalTime += (System.nanoTime() - start);
 		double time = (System.nanoTime() - start) / 1.0e9;
 		System.out.println(benchMark + " nodes searched in " + time);
 		double tpn = benchMark / time;
 		System.out.format("Nodes per second: %.3f\n", tpn);
-		System.out.println("Global alpha: " + globalAlpha + " beta: " + globalBeta);
+		System.out.println("NEW AI Total Notes: " + totalNodes + " Sec: " + (totalTime / 1e9));
 		return ret;
 	}
-	
-	
 
+	/*
+	 * always evaluate from our perspective
+	 */
 	public int evaluateBoard(GameBoard board) {
 		int score = 0;
-		
-		int[][] countPieces = new int[Piece.COLORS.length][Piece.NAMES.length];
-		
-		for (int col = 0; col < GameBoard.WIDTH; col++) {
-			for (int row = 0; row < GameBoard.HEIGHT; row++) {
+
+		short[][] countPieces = new short[Piece.COLORS.length][Piece.NAMES.length];
+		short[] castled = new short[Piece.COLORS.length];
+		short[] pawnMobility = new short[Piece.COLORS.length];
+		short[] pieceMobility = new short[Piece.COLORS.length];
+		boolean[][] pawnColumnOccupied = new boolean[Piece.COLORS.length][GameBoard.WIDTH];
+		short[] pawnColumnPenalty = new short[Piece.COLORS.length];
+		short[] knighIsolated = new short[Piece.COLORS.length];
+
+		for (short col = 0; col < GameBoard.WIDTH; col++) {
+			for (short row = 0; row < GameBoard.HEIGHT; row++) {
 				Piece piece = board.getPiece(Position.get(col, row));
-				if (piece != null)
+				if (piece != null) {
 					countPieces[piece.getColor()][piece.getType()]++;
-			}
-		}
-		
-		score += 1 * (countPieces[playerColor][Piece.PAWN] - countPieces[enemyColor][Piece.PAWN]);
-		score += 3 * (countPieces[playerColor][Piece.BISHOP] - countPieces[enemyColor][Piece.BISHOP]);
-		score += 3 * (countPieces[playerColor][Piece.KNIGHT] - countPieces[enemyColor][Piece.KNIGHT]);
-		score += 5 * (countPieces[playerColor][Piece.ROOK] - countPieces[enemyColor][Piece.ROOK]);
-		score += 9 * (countPieces[playerColor][Piece.QUEEN] - countPieces[enemyColor][Piece.QUEEN]);
-		
-		return score;
-	}
-	
-	public int oldEvaluateBoard(GameBoard board) {
-		int score = 0;
 
-		 int numK = 0, numEK = 0;
-		int numQ = 0, numEQ = 0;
-		int numR = 0, numER = 0;
-		int numB = 0, numEB = 0;
-		int numN = 0, numEN = 0;
-		int numP = 0, numEP = 0;
+					if (piece.getType() == Piece.KING) {
+						castled[piece.getColor()] = (short) (board.hasCastled(piece.getColor()) ? 1 : 0);
+					} else if (piece.getType() == Piece.PAWN) {
+						short val;
+						if (piece.getColor() == Piece.WHITE)
+							val = (short) (6 - row);
+						else
+							val = (short) (row - 1);
 
+						// linear mobility bonus per distance out
+						pawnMobility[piece.getColor()] += val;
+						// bonus for getting off start position
+						if (val != 0)
+							pawnMobility[piece.getColor()] += 1;
 
-		for (int i = 0; i < 8; i++) // col
-		{
-			for (int j = 0; j < 8; j++) // row
-			{
-				Position pos = Position.get(i, j);
-				if (board.isEmpty(pos))
-					continue;
-				Piece p = board.getPiece(pos);
-				int piece_type = p.getType();
-				
-				if (p.getColor() == playerColor) // piece of computer
-				{
-					switch (piece_type) {
-					case Piece.KING:
-						 numK++;
-						break;
-					case Piece.QUEEN:
-						numQ++;
-					case Piece.ROOK:
-						numR++;
-					case Piece.BISHOP:
-						numB++;
-					case Piece.KNIGHT:
-						numN++;
-					case Piece.PAWN:
-						numP++;
-						break;
-					}
-				} else {
-					switch (piece_type) {
-					case Piece.KING:
-						 numEK++;
-						break;
-					case Piece.QUEEN:
-						numEQ++;
-					case Piece.ROOK:
-						numER++;
-					case Piece.BISHOP:
-						numEB++;
-					case Piece.KNIGHT:
-						numEN++;
-					case Piece.PAWN:
-						numEP++;
-						break;
+						// multiple pawns in the same column
+						if (pawnColumnOccupied[piece.getColor()][col])
+							pawnColumnPenalty[piece.getColor()]++;
+						pawnColumnOccupied[piece.getColor()][col] = true;
+					} else {
+						short val;
+						if (piece.getColor() == Piece.WHITE)
+							val = (short) (7 - row);
+						else
+							val = (short) (row);
+
+						// linear mobility bonus per distance out
+						pieceMobility[piece.getColor()] += val;
+						// bonus for getting off start position
+						if (val != 0)
+							pieceMobility[piece.getColor()] += 2;
+
+						if (piece.getType() == Piece.KNIGHT) {
+							if (col == 0 || col == 7)
+								knighIsolated[piece.getColor()]++;
+						}
 					}
 				}
 			}
 		}
 
-		score = 2 * (
-						10000 * (numK - numEK) +
-						9 * (numQ - numEQ) + 
-						5 * (numR - numER) + 
-						3 * (numB - numEB + numN - numEN) + 
-						1 * (numP - numEP)
-					); 
+		score += 1 * (countPieces[playerColor][Piece.PAWN] - countPieces[enemyColor][Piece.PAWN]);
+		score += 3 * (countPieces[playerColor][Piece.BISHOP] - countPieces[enemyColor][Piece.BISHOP]);
+		score += 3 * (countPieces[playerColor][Piece.KNIGHT] - countPieces[enemyColor][Piece.KNIGHT]);
+		score += 5 * (countPieces[playerColor][Piece.ROOK] - countPieces[enemyColor][Piece.ROOK]);
+		score += 9 * (countPieces[playerColor][Piece.QUEEN] - countPieces[enemyColor][Piece.QUEEN]);
+		score += 36 * (countPieces[playerColor][Piece.KING] - countPieces[enemyColor][Piece.KING]);
+		score *= 8;
+
+		score += 16 * (castled[playerColor] - castled[enemyColor]);
+		score += 1 * (pawnMobility[playerColor] - pawnMobility[enemyColor]);
+		score += 1 * (pieceMobility[playerColor] - pieceMobility[enemyColor]);
+		score += 4 * (pawnColumnPenalty[playerColor] - pawnColumnPenalty[enemyColor]);
+		score += 4 * (knighIsolated[playerColor] - knighIsolated[enemyColor]);
 
 		return score;
 	}

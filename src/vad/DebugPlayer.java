@@ -29,9 +29,9 @@ public class DebugPlayer implements Player {
 		GameBoard b = cgb.getGameBoard();
 		update(b);
 		
-		if (movesMade == 10) {
-			System.out.println("============ 10 MOVES HAVE BEEN PLAYED========");
-			System.out.println(opponent.totalNodes + "|" + opponent.totalTime);
+		if (movesMade == 11) {
+			System.out.println("============ 10 MOVES HAVE BEEN PLAYED===========");
+			System.out.println(opponent.totalNodes + " " + (opponent.totalTime / 1e9));
 			System.exit(0);
 		}
 

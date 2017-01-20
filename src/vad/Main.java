@@ -32,12 +32,14 @@ public class Main
 			if (board.currentColor == Piece.WHITE)
 			{
 				CompressedGameBoard b = new CompressedGameBoard(board);
+				p1.update(b);
 				p2.update(b);
 				board.apply(p1.makeMove(b));
 			} else
 			{
 				CompressedGameBoard b = new CompressedGameBoard(board);
 				p1.update(b);
+				p2.update(b);
 				board.apply(p2.makeMove(b));
 			}
 
@@ -46,7 +48,6 @@ public class Main
 
 	public static void main(String[] args) throws IOException
 	{
-		//Player p1 = new UserPlayer(Piece.WHITE);
 		Player p2;
 		if (NETWORKING)
 		{
@@ -55,9 +56,12 @@ public class Main
 			socket.close();
 		} else
 		{
-			p2 = new AIPlayer(Piece.BLACK);
+			p2 = new OldAIPlayer(Piece.BLACK);
 		}
-		Player p1 = new DebugPlayer(Piece.WHITE, (AIPlayer) p2);
+		//Player p1 = new DebugPlayer(Piece.WHITE, (AIPlayer) p2);
+		//Player p1 = new UserPlayer(Piece.WHITE);
+		Player p1 = new AIPlayer(Piece.WHITE);
+		
 		startGame(p1, p2);
 	}
 }
