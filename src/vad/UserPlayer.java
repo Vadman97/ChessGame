@@ -98,5 +98,10 @@ public class UserPlayer implements Player, ClickListener
 		}
 
 	}
+	
+	@Override
+	public int getColor() {
+		return playerColor;
+	}
 
 }

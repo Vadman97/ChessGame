@@ -48,4 +48,9 @@ public class DebugPlayer implements Player {
 		//
 		// return m;
 	}
+	
+	@Override
+	public int getColor() {
+		return playerColor;
+	}
 }

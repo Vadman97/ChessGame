@@ -11,4 +11,6 @@ public interface Player
 	Move makeMove(CompressedGameBoard b);
 
 	void update(CompressedGameBoard board);
+	
+	int getColor();
 }

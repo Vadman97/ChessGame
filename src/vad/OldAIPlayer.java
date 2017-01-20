@@ -60,7 +60,6 @@ public class OldAIPlayer implements Player {
 	@Override
 	public Move makeMove(CompressedGameBoard cpdboard) {
 		GameBoard board = cpdboard.getGameBoard();
-		evaluateBoard(board);
 		realBoard = board;
 		long start = System.currentTimeMillis();
 		thinking = true;
@@ -526,5 +525,10 @@ public class OldAIPlayer implements Player {
 //			}
 		
 		return score;
+	}
+	
+	@Override
+	public int getColor() {
+		return playerColor;
 	}
 }
