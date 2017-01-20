@@ -20,12 +20,7 @@ public class AIPlayer implements Player {
 	int enemyColor;
 	int depth = 4;
 	GameBoard realBoard;
-//	ConcurrentHashMap<CompressedGameBoard, TranspositionTableEntry> cache = new ConcurrentHashMap<>(CACHE_INITIAL_SIZE,
-//			CACHE_LOAD_FACTOR, CACHE_NUM_SHARDS);
 	HashMap<CompressedGameBoard, TranspositionTableEntry> cache = new HashMap<>(CACHE_INITIAL_SIZE, CACHE_LOAD_FACTOR);
-
-	// private volatile int globalAlpha = MAX;
-	// private volatile int globalBeta = MIN;
 
 	ChessGUI gui;
 	GameBoard lastBoardConfig;
@@ -39,15 +34,6 @@ public class AIPlayer implements Player {
 
 	public long totalTime = 0;
 	public long totalNodes = 0;
-
-	// public synchronized void updateGlobalAlpha(int alpha) {
-	// // System.out.println(this.globalAlpha + " " + alpha);
-	// this.globalAlpha = alpha;
-	// }
-	//
-	// public synchronized void updateGlobalBeta(int beta) {
-	// this.globalBeta = beta;
-	// }
 
 	public AIPlayer(int playerColor) {
 		this.playerColor = playerColor;
@@ -93,14 +79,6 @@ public class AIPlayer implements Player {
 	}
 
 	public int negascout(GameBoard board, int alpha, int beta, int d) {
-		// if (d % 2 == 0) {
-		// alpha = globalAlpha;
-		// beta = globalBeta;
-		// } else {
-		// alpha = -globalAlpha;
-		// beta = -globalBeta;
-		// }
-		// ???
 		CompressedGameBoard cgb = new CompressedGameBoard(board);
 		// check cache in case this board was already evaluated
 		if (cache.containsKey(cgb)) {
@@ -154,7 +132,6 @@ public class AIPlayer implements Player {
 			}
 			if (score > alpha) {
 				alpha = score;
-				// updateGlobalAlpha(alpha);
 			}
 			if (alpha >= beta) {
 				break;
@@ -163,18 +140,6 @@ public class AIPlayer implements Player {
 		int cacheFlag = alpha < originalAlpha ? TranspositionTableEntry.UPPER_BOUND
 				: (alpha >= beta ? TranspositionTableEntry.LOWER_BOUND : TranspositionTableEntry.PRECISE);
 		cache.put(cgb, new TranspositionTableEntry(cacheFlag, alpha, d));
-
-		// if (alpha <= originalAlpha)
-		// updateGlobalBeta(alpha);
-		// else if (alpha >= beta)
-		// updateGlobalAlpha(alpha);
-
-		// if (cacheFlag == TranspositionTableEntry.UPPER_BOUND) {
-		// updateGlobalBeta(alpha);
-		// }
-		// if (cacheFlag == TranspositionTableEntry.LOWER_BOUND) {
-		// updateGlobalAlpha(alpha);
-		// }
 
 		return alpha;
 	}
