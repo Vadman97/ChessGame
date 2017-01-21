@@ -34,10 +34,15 @@ public class AIPlayer implements Player {
 
 	public long totalTime = 0;
 	public long totalNodes = 0;
+	/* values from 1-8 */
+	public int randomizer[] = new int[2];
 
 	public AIPlayer(int playerColor) {
 		this.playerColor = playerColor;
 		this.enemyColor = Piece.getOppositeColor(this.playerColor);
+		for (int i = 0; i < randomizer.length; i++)
+			randomizer[i] = r.nextInt(4) + 1;
+		
 		if (UI_ENABLED)
 			gui = new ChessGUI(null, playerColor);
 	}
@@ -53,14 +58,14 @@ public class AIPlayer implements Player {
 		long end = System.currentTimeMillis();
 		double timeSec = (end - start) / 1000.;
 
-		if (board.getNumAllPieces() < 20) {
-			// increase search depth if our search space gets smaller
-			if (timeSec < 1. && depth < 10) {
-				depth += 2;
-			} else if (timeSec > 30.) {
-				depth -= 2;
-			}
+		// if (board.getNumAllPieces() < 20) {
+		// increase search depth if our search space gets smaller
+		if (timeSec < 1. && depth < 10) {
+			depth += 1;
+		} else if (timeSec > 30.) {
+			depth -= 1;
 		}
+		// }
 
 		System.out.println("AI Think time: " + timeSec + " depth: " + depth + " pieces: " + board.getNumAllPieces());
 		thinking = false;
@@ -233,7 +238,7 @@ public class AIPlayer implements Player {
 	 * always evaluate from our perspective
 	 */
 	public int evaluateBoard(GameBoard board) {
-		int score = 0;
+		int score = 0, aggressive = 0, defensive = 0;
 
 		short[][] countPieces = new short[Piece.COLORS.length][Piece.NAMES.length];
 		short[] castled = new short[Piece.COLORS.length];
@@ -258,9 +263,9 @@ public class AIPlayer implements Player {
 
 					if (piece.getType() == Piece.KING) {
 						castled[piece.getColor()] = (short) (board.hasCastled(piece.getColor()) ? 1 : 0);
-						
+
 						if (piece.getColor() == playerColor) {
- 							kingHome[piece.getColor()] += (row == 7) ? 1 : 0;
+							kingHome[piece.getColor()] += (row == 7) ? 1 : 0;
 						} else {
 							kingHome[piece.getColor()] += (row == 0) ? 1 : 0;
 						}
@@ -337,16 +342,20 @@ public class AIPlayer implements Player {
 		score += 100 * ((board.isCheckMate(enemyColor) ? 1 : 0) - (board.isCheckMate(playerColor) ? 1 : 0));
 		score *= 64;
 
-		score += 1 * (pawnMobility[playerColor] - pawnMobility[enemyColor]);
-		score += 1 * (pawnAdvancedCentered[playerColor] - pawnAdvancedCentered[enemyColor]);
-		score += 1 * (pieceMobility[playerColor] - pieceMobility[enemyColor]);
-		score += 64 * (piecesNotOnFirstRow[playerColor] - piecesNotOnFirstRow[enemyColor]);
-		score += 16 * (pawnColumnPenalty[playerColor] - pawnColumnPenalty[enemyColor]);
-		score += 32 * (knighNotIsolated[playerColor] - knighNotIsolated[enemyColor]);
-		score += 128 * (kingHome[playerColor] - kingHome[enemyColor]);
-
-		score += 64 * (castled[playerColor] - castled[enemyColor]);
-		score += 1 * (squaresControlled[playerColor] - squaresControlled[enemyColor]);
+		aggressive += 1 * (pawnMobility[playerColor] - pawnMobility[enemyColor]);
+		aggressive += 1 * (pawnAdvancedCentered[playerColor] - pawnAdvancedCentered[enemyColor]);
+		aggressive += 1 * (pieceMobility[playerColor] - pieceMobility[enemyColor]);
+		aggressive += 32 * (piecesNotOnFirstRow[playerColor] - piecesNotOnFirstRow[enemyColor]);
+		aggressive += 16 * (pawnColumnPenalty[playerColor] - pawnColumnPenalty[enemyColor]);
+		aggressive += 32 * (knighNotIsolated[playerColor] - knighNotIsolated[enemyColor]);
+		aggressive += 1 * (squaresControlled[playerColor] - squaresControlled[enemyColor]);
+		aggressive *= randomizer[0];
+		
+		defensive += 128 * (kingHome[playerColor] - kingHome[enemyColor]);
+		defensive += 64 * (castled[playerColor] - castled[enemyColor]);
+		defensive *= randomizer[1];
+		
+		score += aggressive + defensive;
 
 		return score;
 	}
