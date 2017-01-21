@@ -101,25 +101,25 @@ public class OldAIPlayer implements Player {
 		// beta = -globalBeta;
 		// }
 		// ???
-		CompressedGameBoard cgb = new CompressedGameBoard(board);
-		// check cache in case this board was already evaluated
-		if (cache.containsKey(cgb)) {
-			TranspositionTableEntry entry = cache.get(cgb);
-			if (entry.isLowerBound()) {
-				if (entry.getValue() > alpha) {
-					alpha = entry.getValue();
-				}
-			} else if (entry.isUpperBound()) {
-				if (entry.getValue() < beta) {
-					beta = entry.getValue();
-				}
-			} else {
-				return entry.getValue();
-			}
-			if (alpha >= beta) {
-				return entry.getValue();
-			}
-		}
+//		CompressedGameBoard cgb = new CompressedGameBoard(board);
+//		// check cache in case this board was already evaluated
+//		if (cache.containsKey(cgb)) {
+//			TranspositionTableEntry entry = cache.get(cgb);
+//			if (entry.isLowerBound()) {
+//				if (entry.getValue() > alpha) {
+//					alpha = entry.getValue();
+//				}
+//			} else if (entry.isUpperBound()) {
+//				if (entry.getValue() < beta) {
+//					beta = entry.getValue();
+//				}
+//			} else {
+//				return entry.getValue();
+//			}
+//			if (alpha >= beta) {
+//				return entry.getValue();
+//			}
+//		}
 
 		// if we are at the bottom of the tree, return the board score
 		if (d == 0) {
@@ -128,7 +128,7 @@ public class OldAIPlayer implements Player {
 			if (board.currentColor != playerColor)
 				score = -score;
 
-			cache.put(cgb, new TranspositionTableEntry(TranspositionTableEntry.PRECISE, score, 0));
+//			cache.put(cgb, new TranspositionTableEntry(TranspositionTableEntry.PRECISE, score, 0));
 			benchMark++;
 			return score;
 		}
@@ -136,7 +136,7 @@ public class OldAIPlayer implements Player {
 		// if we are not at the bottom of the tree, continue down the tree to
 		// return score
 		boolean first = true;
-		int originalAlpha = alpha;
+//		int originalAlpha = alpha;
 		for (Move child : board.getAllPossibleMoves(board.currentColor)) {
 			int score = 0;
 
@@ -161,21 +161,21 @@ public class OldAIPlayer implements Player {
 				break;
 			}
 		}
-		int cacheFlag = alpha < originalAlpha ? TranspositionTableEntry.UPPER_BOUND
-				: (alpha >= beta ? TranspositionTableEntry.LOWER_BOUND : TranspositionTableEntry.PRECISE);
-		cache.put(cgb, new TranspositionTableEntry(cacheFlag, alpha, d));
-
-		if (alpha <= originalAlpha)
-			updateGlobalBeta(alpha);
-		else if (alpha >= beta)
-			updateGlobalAlpha(alpha);
-
-		if (cacheFlag == TranspositionTableEntry.UPPER_BOUND) {
-			updateGlobalBeta(alpha);
-		}
-		if (cacheFlag == TranspositionTableEntry.LOWER_BOUND) {
-			updateGlobalAlpha(alpha);
-		}
+//		int cacheFlag = alpha < originalAlpha ? TranspositionTableEntry.UPPER_BOUND
+//				: (alpha >= beta ? TranspositionTableEntry.LOWER_BOUND : TranspositionTableEntry.PRECISE);
+//		cache.put(cgb, new TranspositionTableEntry(cacheFlag, alpha, d));
+//
+//		if (alpha <= originalAlpha)
+//			updateGlobalBeta(alpha);
+//		else if (alpha >= beta)
+//			updateGlobalAlpha(alpha);
+//
+//		if (cacheFlag == TranspositionTableEntry.UPPER_BOUND) {
+//			updateGlobalBeta(alpha);
+//		}
+//		if (cacheFlag == TranspositionTableEntry.LOWER_BOUND) {
+//			updateGlobalAlpha(alpha);
+//		}
 
 		return alpha;
 	}
@@ -311,7 +311,7 @@ public class OldAIPlayer implements Player {
 		}
 
 		System.out.println("Best score: " + score);
-		cache.clear();
+//		cache.clear();
 		return best;
 	}
 
@@ -341,8 +341,8 @@ public class OldAIPlayer implements Player {
 		benchMark = 0;
 		long start = System.nanoTime();
 
-		Move ret = getBestMoveMTDF(board, d);
-		// Move ret = getBestMoveNegamaxNoThreads(board, d);
+//		Move ret = getBestMoveMTDF(board, d);
+		 Move ret = getBestMoveNegamaxNoThreads(board, d);
 		// Move ret = getBestMoveNegascout(board, d);
 		totalNodes += benchMark;
 		totalTime += (System.nanoTime() - start);
@@ -353,14 +353,18 @@ public class OldAIPlayer implements Player {
 		System.out.println("Global alpha: " + globalAlpha + " beta: " + globalBeta);
 		System.out.println("OLD AI Total Notes: " + totalNodes + " Sec: " + (totalTime / 1e9));
 		if (ret == null) {
-			System.out.println("I RESIGN");
-			while(true) {
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+			System.out.println("No good move found! Picking first possible move.");
+			if (board.getAllPossibleMoves(playerColor).size() == 0) {
+				System.out.println("~~~~~~~~~I RETIRE~~~~~~~~~~");
+				while (true) {
+					try {
+						Thread.sleep(100);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
 				}
 			}
+			return board.getAllPossibleMoves(playerColor).get(0);
 		}
 		return ret;
 	}

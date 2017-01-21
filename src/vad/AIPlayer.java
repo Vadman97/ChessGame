@@ -13,10 +13,10 @@ public class AIPlayer implements Player {
 
 	public static final int REPEATED_MOVE_PENALTY = 10000;
 
-	private static final boolean UI_ENABLED = false;
+	private static final boolean UI_ENABLED = true;
 
-	int playerColor;
-	int enemyColor;
+	private int playerColor; // ROW 7
+	private int enemyColor; // ROW 0
 	int depth = 4;
 	GameBoard realBoard;
 	// HashMap<CompressedGameBoard, TranspositionTableEntry> cache = new
@@ -55,9 +55,9 @@ public class AIPlayer implements Player {
 
 		if (board.getNumAllPieces() < 20) {
 			// increase search depth if our search space gets smaller
-			if (timeSec < 0.75 && depth < 10) {
+			if (timeSec < 1. && depth < 10) {
 				depth += 2;
-			} else if (timeSec > 15.) {
+			} else if (timeSec > 30.) {
 				depth -= 2;
 			}
 		}
@@ -199,7 +199,7 @@ public class AIPlayer implements Player {
 		 * but MTD-F search less nodes All these three should give same results
 		 * - which is the optimal result.
 		 */
-		System.out.println("New AI Thinking.....");
+		System.out.println("New AI Thinking..... d: " + d);
 		benchMark = 0;
 		long start = System.nanoTime();
 
@@ -213,14 +213,18 @@ public class AIPlayer implements Player {
 		System.out.format("Nodes per second: %.3f\n", tpn);
 		System.out.println("NEW AI Total Notes: " + totalNodes + " Sec: " + (totalTime / 1e9));
 		if (ret == null) {
-			System.out.println("I RESIGN");
-			while (true) {
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+			System.out.println("No good move found! Picking first possible move.");
+			if (board.getAllPossibleMoves(playerColor).size() == 0) {
+				System.out.println("~~~~~~~~~I RETIRE~~~~~~~~~~");
+				while (true) {
+					try {
+						Thread.sleep(100);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
 				}
 			}
+			return board.getAllPossibleMoves(playerColor).get(0);
 		}
 		return ret;
 	}
@@ -237,7 +241,11 @@ public class AIPlayer implements Player {
 		short[] pieceMobility = new short[Piece.COLORS.length];
 		boolean[][] pawnColumnOccupied = new boolean[Piece.COLORS.length][GameBoard.WIDTH];
 		short[] pawnColumnPenalty = new short[Piece.COLORS.length];
-		short[] knighIsolated = new short[Piece.COLORS.length];
+		short[] knighNotIsolated = new short[Piece.COLORS.length];
+		short[] pawnAdvancedCentered = new short[Piece.COLORS.length];
+		short[] squaresControlled = new short[Piece.COLORS.length];
+		short[] piecesNotOnFirstRow = new short[Piece.COLORS.length];
+		short[] kingHome = new short[Piece.COLORS.length];
 
 		for (short col = 0; col < GameBoard.WIDTH; col++) {
 			for (short row = 0; row < GameBoard.HEIGHT; row++) {
@@ -245,19 +253,35 @@ public class AIPlayer implements Player {
 				if (piece != null) {
 					countPieces[piece.getColor()][piece.getType()]++;
 
+					squaresControlled[piece.getColor()] += MoveHelper.getReachablePosition(board, col, row, true)
+							.size();
+
 					if (piece.getType() == Piece.KING) {
 						castled[piece.getColor()] = (short) (board.hasCastled(piece.getColor()) ? 1 : 0);
+						
+						if (piece.getColor() == playerColor) {
+ 							kingHome[piece.getColor()] += (row == 7) ? 1 : 0;
+						} else {
+							kingHome[piece.getColor()] += (row == 0) ? 1 : 0;
+						}
 					} else if (piece.getType() == Piece.PAWN) {
-						short val;
-						if (piece.getColor() == Piece.WHITE)
-							val = (short) (6 - row);
+						short rowValue;
+						if (piece.getColor() == playerColor)
+							rowValue = (short) (6 - row);
 						else
-							val = (short) (row - 1);
+							rowValue = (short) (row - 1);
+
+						short colValue = (short) Math.round(3.5 - Math.abs(3.5 - col));
 
 						// linear mobility bonus per distance out
-						pawnMobility[piece.getColor()] += val;
+						pawnMobility[piece.getColor()] += rowValue;
+						if (rowValue != 0) {
+							// reward advanced pawns near center
+							pawnAdvancedCentered[piece.getColor()] += colValue;
+						}
+
 						// bonus for getting off start position
-						if (val != 0)
+						if (rowValue != 0)
 							pawnMobility[piece.getColor()] += 1;
 
 						// multiple pawns in the same column
@@ -266,7 +290,7 @@ public class AIPlayer implements Player {
 						pawnColumnOccupied[piece.getColor()][col] = true;
 					} else {
 						short val;
-						if (piece.getColor() == Piece.WHITE)
+						if (piece.getColor() == playerColor)
 							val = (short) (7 - row);
 						else
 							val = (short) (row);
@@ -278,27 +302,51 @@ public class AIPlayer implements Player {
 							pieceMobility[piece.getColor()] += 2;
 
 						if (piece.getType() == Piece.KNIGHT) {
-							if (col == 0 || col == 7)
-								knighIsolated[piece.getColor()]++;
+							if (col != 0 && col != 7)
+								knighNotIsolated[piece.getColor()]++;
+						}
+
+						if (piece.getColor() == playerColor) {
+							if (row != 7) {
+								piecesNotOnFirstRow[piece.getColor()]++;
+							}
+						} else {
+							if (row != 0) {
+								piecesNotOnFirstRow[piece.getColor()]++;
+							}
 						}
 					}
 				}
 			}
 		}
 
+		// KING HOME BROKEN
+		// PIECESNOTTONFIRSTROW BROKEN
+
+		// king safety - keep king on starting row, pieces around king
+		// spaces protected/attacked by pawns
+		// prevent king reward for moving forward
+		// why are scores neg? something problematic with the score for the two
+		// sides
+
 		score += 1 * (countPieces[playerColor][Piece.PAWN] - countPieces[enemyColor][Piece.PAWN]);
 		score += 3 * (countPieces[playerColor][Piece.BISHOP] - countPieces[enemyColor][Piece.BISHOP]);
 		score += 3 * (countPieces[playerColor][Piece.KNIGHT] - countPieces[enemyColor][Piece.KNIGHT]);
 		score += 5 * (countPieces[playerColor][Piece.ROOK] - countPieces[enemyColor][Piece.ROOK]);
 		score += 9 * (countPieces[playerColor][Piece.QUEEN] - countPieces[enemyColor][Piece.QUEEN]);
-		score += 36 * (countPieces[playerColor][Piece.KING] - countPieces[enemyColor][Piece.KING]);
-		score *= 8;
+		score += 100 * ((board.isCheckMate(enemyColor) ? 1 : 0) - (board.isCheckMate(playerColor) ? 1 : 0));
+		score *= 64;
 
-		score += 16 * (castled[playerColor] - castled[enemyColor]);
 		score += 1 * (pawnMobility[playerColor] - pawnMobility[enemyColor]);
+		score += 1 * (pawnAdvancedCentered[playerColor] - pawnAdvancedCentered[enemyColor]);
 		score += 1 * (pieceMobility[playerColor] - pieceMobility[enemyColor]);
-		score += 4 * (pawnColumnPenalty[playerColor] - pawnColumnPenalty[enemyColor]);
-		score += 4 * (knighIsolated[playerColor] - knighIsolated[enemyColor]);
+		score += 64 * (piecesNotOnFirstRow[playerColor] - piecesNotOnFirstRow[enemyColor]);
+		score += 16 * (pawnColumnPenalty[playerColor] - pawnColumnPenalty[enemyColor]);
+		score += 32 * (knighNotIsolated[playerColor] - knighNotIsolated[enemyColor]);
+		score += 128 * (kingHome[playerColor] - kingHome[enemyColor]);
+
+		score += 64 * (castled[playerColor] - castled[enemyColor]);
+		score += 1 * (squaresControlled[playerColor] - squaresControlled[enemyColor]);
 
 		return score;
 	}
