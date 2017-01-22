@@ -13,7 +13,7 @@ public class AIPlayer implements Player {
 
 	public static final int REPEATED_MOVE_PENALTY = 10000;
 
-	private static final boolean UI_ENABLED = true;
+	private static final boolean UI_ENABLED = false;
 
 	private int playerColor; // ROW 7
 	private int enemyColor; // ROW 0
@@ -42,7 +42,7 @@ public class AIPlayer implements Player {
 		this.enemyColor = Piece.getOppositeColor(this.playerColor);
 		aggrMult = r.nextInt(4) + 1;
 		defMult = r.nextInt(4) + 1;
-		
+
 		if (UI_ENABLED)
 			gui = new ChessGUI(null, playerColor);
 	}
@@ -58,14 +58,14 @@ public class AIPlayer implements Player {
 		long end = System.currentTimeMillis();
 		double timeSec = (end - start) / 1000.;
 
-		// if (board.getNumAllPieces() < 20) {
-		// increase search depth if our search space gets smaller
-		if (timeSec < 1. && depth < 10) {
-			depth += 1;
-		} else if (timeSec > 30.) {
-			depth -= 1;
+		if (board.getNumAllPieces() < 20) {
+			// increase search depth if our search space gets smaller
+			if (timeSec < 1. && depth < 10) {
+				depth += 2;
+			} else if (timeSec > 30.) {
+				depth -= 2;
+			}
 		}
-		// }
 
 		System.out.println("AI Think time: " + timeSec + " depth: " + depth + " pieces: " + board.getNumAllPieces());
 		thinking = false;
@@ -222,7 +222,8 @@ public class AIPlayer implements Player {
 			System.out.println("No good move found! Picking first possible move.");
 			if (board.getAllPossibleMoves(playerColor).size() == 0) {
 				System.out.println("~~~~~~~~~I RESIGN~~~~~~~~~~");
-				System.out.println("My aggressive multiplier was " + aggrMult + " and defensive multiplier was " + defMult);
+				System.out.println(
+						"My aggressive multiplier was " + aggrMult + " and defensive multiplier was " + defMult);
 				while (true) {
 					try {
 						Thread.sleep(100);
@@ -342,8 +343,9 @@ public class AIPlayer implements Player {
 		score += 5 * (countPieces[playerColor][Piece.ROOK] - countPieces[enemyColor][Piece.ROOK]);
 		score += 9 * (countPieces[playerColor][Piece.QUEEN] - countPieces[enemyColor][Piece.QUEEN]);
 		score += 100 * ((board.isCheckMate(enemyColor) ? 1 : 0) - (board.isCheckMate(playerColor) ? 1 : 0));
-		score *= 64 * defMult;
+		score *= 64;
 
+		aggressive += 32 * ((board.isCheck(enemyColor) ? 1 : 0) - (board.isCheck(playerColor) ? 1 : 0));
 		aggressive += 1 * (pawnMobility[playerColor] - pawnMobility[enemyColor]);
 		aggressive += 1 * (pawnAdvancedCentered[playerColor] - pawnAdvancedCentered[enemyColor]);
 		aggressive += 1 * (pieceMobility[playerColor] - pieceMobility[enemyColor]);
@@ -351,12 +353,12 @@ public class AIPlayer implements Player {
 		aggressive += 16 * (pawnColumnPenalty[playerColor] - pawnColumnPenalty[enemyColor]);
 		aggressive += 32 * (knighNotIsolated[playerColor] - knighNotIsolated[enemyColor]);
 		aggressive += 1 * (squaresControlled[playerColor] - squaresControlled[enemyColor]);
-		aggressive *= aggrMult;
-		
+		// aggressive *= aggrMult;
+
 		defensive += 128 * (kingHome[playerColor] - kingHome[enemyColor]);
 		defensive += 64 * (castled[playerColor] - castled[enemyColor]);
-		//defensive *= 4 - aggrMult;
-		
+		// defensive *= 4 - aggrMult;
+
 		score += aggressive + defensive;
 
 		return score;
