@@ -35,13 +35,13 @@ public class AIPlayer implements Player {
 	public long totalTime = 0;
 	public long totalNodes = 0;
 	/* values from 1-8 */
-	public int randomizer[] = new int[2];
+	private int aggrMult, defMult;
 
 	public AIPlayer(int playerColor) {
 		this.playerColor = playerColor;
 		this.enemyColor = Piece.getOppositeColor(this.playerColor);
-		for (int i = 0; i < randomizer.length; i++)
-			randomizer[i] = r.nextInt(4) + 1;
+		aggrMult = r.nextInt(4) + 1;
+		defMult = r.nextInt(4) + 1;
 		
 		if (UI_ENABLED)
 			gui = new ChessGUI(null, playerColor);
@@ -204,6 +204,7 @@ public class AIPlayer implements Player {
 		 * but MTD-F search less nodes All these three should give same results
 		 * - which is the optimal result.
 		 */
+		System.out.println("My aggressive multiplier is " + aggrMult + " and defensive multiplier is " + defMult);
 		System.out.println("New AI Thinking..... d: " + d);
 		benchMark = 0;
 		long start = System.nanoTime();
@@ -220,7 +221,8 @@ public class AIPlayer implements Player {
 		if (ret == null) {
 			System.out.println("No good move found! Picking first possible move.");
 			if (board.getAllPossibleMoves(playerColor).size() == 0) {
-				System.out.println("~~~~~~~~~I RETIRE~~~~~~~~~~");
+				System.out.println("~~~~~~~~~I RESIGN~~~~~~~~~~");
+				System.out.println("My aggressive multiplier was " + aggrMult + " and defensive multiplier was " + defMult);
 				while (true) {
 					try {
 						Thread.sleep(100);
@@ -340,20 +342,20 @@ public class AIPlayer implements Player {
 		score += 5 * (countPieces[playerColor][Piece.ROOK] - countPieces[enemyColor][Piece.ROOK]);
 		score += 9 * (countPieces[playerColor][Piece.QUEEN] - countPieces[enemyColor][Piece.QUEEN]);
 		score += 100 * ((board.isCheckMate(enemyColor) ? 1 : 0) - (board.isCheckMate(playerColor) ? 1 : 0));
-		score *= 64;
+		score *= 64 * defMult;
 
 		aggressive += 1 * (pawnMobility[playerColor] - pawnMobility[enemyColor]);
 		aggressive += 1 * (pawnAdvancedCentered[playerColor] - pawnAdvancedCentered[enemyColor]);
 		aggressive += 1 * (pieceMobility[playerColor] - pieceMobility[enemyColor]);
-		aggressive += 32 * (piecesNotOnFirstRow[playerColor] - piecesNotOnFirstRow[enemyColor]);
+		aggressive += 16 * aggrMult * (piecesNotOnFirstRow[playerColor] - piecesNotOnFirstRow[enemyColor]);
 		aggressive += 16 * (pawnColumnPenalty[playerColor] - pawnColumnPenalty[enemyColor]);
 		aggressive += 32 * (knighNotIsolated[playerColor] - knighNotIsolated[enemyColor]);
 		aggressive += 1 * (squaresControlled[playerColor] - squaresControlled[enemyColor]);
-		aggressive *= randomizer[0];
+		aggressive *= aggrMult;
 		
 		defensive += 128 * (kingHome[playerColor] - kingHome[enemyColor]);
 		defensive += 64 * (castled[playerColor] - castled[enemyColor]);
-		defensive *= randomizer[1];
+		//defensive *= 4 - aggrMult;
 		
 		score += aggressive + defensive;
 
