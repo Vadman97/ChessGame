@@ -19,7 +19,7 @@ public class CompressedGameBoard implements Serializable
 	long snd2c;
 	long trd2c;
 	long lst2c;
-	short flags;
+	int flags;
 
 	public static int CURRENT_PLAYER_FLAG = 0;
 	public static int BLACK_FLAG_LOW = 1;

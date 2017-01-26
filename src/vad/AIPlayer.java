@@ -16,13 +16,10 @@ public class AIPlayer implements Player {
 
 	private static final boolean UI_ENABLED = false;
 
-	private int playerColor; // ROW 7
-	private int enemyColor; // ROW 0
-	int depth = 4;
+	private int playerColor;
+	int depth = 6;
 	GameBoard realBoard;
-	HashMap<CompressedGameBoard, TranspositionTableEntry> cache = new HashMap<>(CACHE_INITIAL_SIZE, CACHE_LOAD_FACTOR);
-	HashMap<CompressedGameBoard, TranspositionTableEntry2> cache2 = new HashMap<>(CACHE_INITIAL_SIZE,
-			CACHE_LOAD_FACTOR);
+	HashMap<CompressedGameBoard, TranspositionTableEntry2> cache2 = new HashMap<>(CACHE_INITIAL_SIZE, CACHE_LOAD_FACTOR);
 
 	ChessGUI gui;
 	GameBoard lastBoardConfig;
@@ -36,12 +33,11 @@ public class AIPlayer implements Player {
 
 	public long totalTime = 0;
 	public long totalNodes = 0;
-	/* values from 1-8 */
+	/* values from 1-4 */
 	private int aggrMult, defMult;
 
 	public AIPlayer(int playerColor) {
 		this.playerColor = playerColor;
-		this.enemyColor = Piece.getOppositeColor(this.playerColor);
 		aggrMult = r.nextInt(4) + 1;
 		defMult = r.nextInt(4) + 1;
 
@@ -147,106 +143,7 @@ public class AIPlayer implements Player {
 		return new ScoredMove(best, score);
 	}
 
-	public int negascout(GameBoard board, int alpha, int beta, int d) {
-//		CompressedGameBoard cgb = new CompressedGameBoard(board); // check cache
-//		// in case this board was already evaluated
-//		if (cache.containsKey(cgb)) {
-//			TranspositionTableEntry entry = cache.get(cgb);
-//			if (entry.isLowerBound()) {
-//				if (entry.getValue() > alpha) {
-//					System.out.println("Setting alpha from cache");
-//					alpha = entry.getValue();
-//				}
-//			} else if (entry.isUpperBound()) {
-//				if (entry.getValue() < beta) {
-//					System.out.println("Setting beta from cache");
-//					beta = entry.getValue();
-//				}
-//			} else {
-//				System.out.println("Retrieving exact value from cache");
-//				return entry.getValue();
-//			}
-//			if (alpha >= beta) {
-//				System.out.println("alpha more than beta, returning score from cache");
-//				return entry.getValue();
-//			}
-//		}
-
-		// if we are at the bottom of the tree, return the board score
-		if (d == 0) {
-			int score = evaluateBoard(board);
-
-			if (board.currentColor != playerColor)
-				score = -score;
-
-//			cache.put(cgb, new TranspositionTableEntry(TranspositionTableEntry.PRECISE, score, 0));
-			benchMark++;
-			return score;
-		}
-
-		// if we are not at the bottom of the tree, continue down the tree to
-		// return score
-		boolean first = true;
-		int originalAlpha = alpha;
-		for (Move child : board.getAllPossibleMoves(board.currentColor)) {
-			int score = 0;
-
-			if (first) {
-				first = false;
-				board.apply(child);
-				score = -negascout(board, -alpha - 1, -alpha, d - 1);
-				if (alpha < score && score < beta) {
-					score = -negascout(board, -beta, -score, d - 1);
-				}
-				board.undo(child);
-			} else {
-				board.apply(child);
-				score = -negascout(board, -beta, -alpha, d - 1);
-				board.undo(child);
-			}
-			if (score > alpha) {
-				alpha = score;
-			}
-			if (alpha >= beta) {
-				break;
-			}
-		}
-		int cacheFlag = alpha < originalAlpha ? TranspositionTableEntry.UPPER_BOUND
-				: (alpha >= beta ? TranspositionTableEntry.LOWER_BOUND : TranspositionTableEntry.PRECISE);
-//		cache.put(cgb, new TranspositionTableEntry(cacheFlag, alpha, d));
-
-		return alpha;
-	}
-
-	public Move getBestMoveNegamaxNoThreads(GameBoard board, int d) {
-		Move best = null;
-		int alpha = MIN;
-		boolean first = true;
-		for (Move child : board.getAllPossibleMoves(playerColor)) {
-			int score;
-			if (first) {
-				first = false;
-				board.apply(child);
-				score = -negascout(board, -alpha - 1, -alpha, d - 1);
-				if (alpha < score) {
-					score = -negascout(board, MIN, -score, d - 1);
-				}
-				board.undo(child);
-			} else {
-				board.apply(child);
-				score = -negascout(board, MIN, -alpha, d - 1);
-				board.undo(child);
-			}
-			if (score > alpha) {
-				alpha = score;
-				best = child;
-			}
-		}
-		System.out.println("Best score: " + alpha);
-		// cache.clear();
-		return best;
-	}
-
+	// every other move is good then bad, corresponds with the setpoint of lb, ub??
 	public Move getBestMoveMTDF(GameBoard board, int d) {
 		int lb = MIN;
 		int ub = MAX;
@@ -260,24 +157,25 @@ public class AIPlayer implements Player {
 				lb = g.score;
 			}
 		} while (lb < ub);
+		System.out.println("Best move: " + g.score);
 		return g.move;
-//		return getBestMoveMTDFHelper(board, d);
 	}
-
-	public Move getBestMoveMTDFHelper(GameBoard board, int d) {
-		Move best = null;
-		int score = MIN, bestScore = MIN;
-		for (Move child : board.getAllPossibleMoves(board.currentColor)) {
-			board.apply(child);
-			score = AlphaBetaWithMemory(board, MIN, MAX, d - 1).score;
-			board.undo(child);
-			if (score > bestScore) {
-				bestScore = score;
-				best = child;
-			}
-		}
-		System.out.println("Best score: " + bestScore);
-		return best;
+	
+	public Move getBestMoveIterativeMTDF(GameBoard board, int max_depth) {
+		return null;
+//		firstguess := 0;
+//		for d = 1 to MAX_SEARCH_DEPTH do
+//		firstguess := MTDF(root, firstguess, d);
+//		if times_up() then break;
+//		return firstguess;
+		
+//		ScoredMove firstGuess = new ScoredMove(null, 0);
+//		for (int d = 1; d <= max_depth; d++) {
+//			firstGuess = getBestMoveMTDF(board, firstGuess, d);
+//			if (times_up())
+//				break;
+//		}
+//		return firstGuess;
 	}
 
 	public Move getBestMove(GameBoard board, int d) {
@@ -292,7 +190,6 @@ public class AIPlayer implements Player {
 		long start = System.nanoTime();
 
 		Move ret = getBestMoveMTDF(board, d);
-//		Move ret = getBestMoveNegamaxNoThreads(board, d);
 		totalNodes += benchMark;
 		totalTime += (System.nanoTime() - start);
 		double time = (System.nanoTime() - start) / 1.0e9;
@@ -323,7 +220,7 @@ public class AIPlayer implements Player {
 	 * always evaluate from the perspective of the current player
 	 */
 	public int evaluateBoard(GameBoard board) {
-		int pColor = board.currentColor; // pColor is row 6-7
+		int pColor = playerColor;//board.currentColor; // pColor is row 6-7
 		int eColor = Piece.getOppositeColor(pColor); // eColor is row 0-1
 
 		// System.out.println((pColor == Piece.BLACK ? "Black" : "White"));
@@ -436,7 +333,7 @@ public class AIPlayer implements Player {
 		aggressive += 1 * (pawnMobility[pColor] - pawnMobility[eColor]);
 		aggressive += 1 * (pawnAdvancedCentered[pColor] - pawnAdvancedCentered[eColor]);
 		aggressive += 1 * (pieceMobility[pColor] - pieceMobility[eColor]);
-		aggressive += 16 * aggrMult * (piecesNotOnFirstRow[pColor] - piecesNotOnFirstRow[eColor]);
+		aggressive += 16 * (piecesNotOnFirstRow[pColor] - piecesNotOnFirstRow[eColor]);
 		aggressive += 16 * (pawnColumnPenalty[pColor] - pawnColumnPenalty[eColor]);
 		aggressive += 32 * (knighNotIsolated[pColor] - knighNotIsolated[eColor]);
 		aggressive += 1 * (squaresControlled[pColor] - squaresControlled[eColor]);
