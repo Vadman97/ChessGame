@@ -8,7 +8,7 @@ import java.io.Serializable;
  * 
  * TODO maybe we can do all things in compressed game board
  * 
- * @author Gary Guo
+ * @author Vadim Korolik, Gary Guo
  *
  */
 public class CompressedGameBoard implements Serializable
