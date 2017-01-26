@@ -84,19 +84,20 @@ public class AIPlayer implements Player {
 			gui.updateBoard(board);
 	}
 
-	public int AlphaBetaWithMemory(GameBoard board, int alpha, int beta, int d) {
+	public ScoredMove AlphaBetaWithMemory(GameBoard board, int alpha, int beta, int d) {
 		CompressedGameBoard cb = new CompressedGameBoard(board);
 		if (cache2.containsKey(cb)) {
 			TranspositionTableEntry2 entry = cache2.get(cb);
 			if (entry.getLower() >= beta) {
-				return entry.getLower();
+				return new ScoredMove(entry.getMove(), entry.getLower());
 			}
 			if (entry.getUpper() <= alpha)
-				return entry.getUpper();
+				return new ScoredMove(entry.getMove(), entry.getUpper());
 			alpha = Math.max(alpha, entry.getLower());
 			beta = Math.min(beta, entry.getUpper());
 		}
 
+		Move best = null;
 		int score = 0;
 		if (d == 0) {
 			score = evaluateBoard(board);
@@ -109,7 +110,11 @@ public class AIPlayer implements Player {
 				if (score >= beta)
 					break;
 				board.apply(child);
-				score = Math.max(score, AlphaBetaWithMemory(board, a, beta, d - 1));
+				ScoredMove val = AlphaBetaWithMemory(board, a, beta, d - 1);
+				if (val.score > score) {
+					score = val.score;
+					best = child;
+				}
 				board.undo(child);
 				a = Math.max(a, score);
 			}
@@ -121,21 +126,25 @@ public class AIPlayer implements Player {
 				if (score <= alpha)
 					break;
 				board.apply(child);
-				score = Math.min(score, AlphaBetaWithMemory(board, alpha, b, d - 1));
+				ScoredMove val = AlphaBetaWithMemory(board, alpha, b, d - 1);
+				if (val.score < score) {
+					score = val.score;
+					best = child;
+				}
 				board.undo(child);
 				b = Math.min(b, score);
 			}
 		}
 		if (score <= alpha) {
-			cache2.put(cb, new TranspositionTableEntry2(MIN, score));
+			cache2.put(cb, new TranspositionTableEntry2(MIN, score, best));
 		}
 		if (score > alpha && score < beta) {
-			cache2.put(cb, new TranspositionTableEntry2(score, score));
+			cache2.put(cb, new TranspositionTableEntry2(score, score, best));
 		}
 		if (score >= beta) {
-			cache2.put(cb, new TranspositionTableEntry2(score, MAX));
+			cache2.put(cb, new TranspositionTableEntry2(score, MAX, best));
 		}
-		return score;
+		return new ScoredMove(best, score);
 	}
 
 	public int negascout(GameBoard board, int alpha, int beta, int d) {
@@ -239,20 +248,20 @@ public class AIPlayer implements Player {
 	}
 
 	public Move getBestMoveMTDF(GameBoard board, int d) {
-		int score = 0;
 		int lb = MIN;
 		int ub = MAX;
+		ScoredMove g = new ScoredMove(null, MIN);
 		do {
-			int beta = score == lb ? score + 1 : score;
-			score = AlphaBetaWithMemory(board, beta - 1, beta, d);
-			if (score < beta) {
-				ub = score;
+			int beta = g.score == lb ? g.score + 1 : g.score;
+			g = AlphaBetaWithMemory(board, beta - 1, beta, d);
+			if (g.score < beta) {
+				ub = g.score;
 			} else {
-				lb = score;
+				lb = g.score;
 			}
 		} while (lb < ub);
-		// TODO change so that ABM returns move, score
-		return getBestMoveMTDFHelper(board, d);
+		return g.move;
+//		return getBestMoveMTDFHelper(board, d);
 	}
 
 	public Move getBestMoveMTDFHelper(GameBoard board, int d) {
@@ -260,7 +269,7 @@ public class AIPlayer implements Player {
 		int score = MIN, bestScore = MIN;
 		for (Move child : board.getAllPossibleMoves(board.currentColor)) {
 			board.apply(child);
-			score = AlphaBetaWithMemory(board, MIN, MAX, d - 1);
+			score = AlphaBetaWithMemory(board, MIN, MAX, d - 1).score;
 			board.undo(child);
 			if (score > bestScore) {
 				bestScore = score;
