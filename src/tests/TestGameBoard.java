@@ -10,10 +10,11 @@ import vad.Move;
 import vad.Position;
 
 public class TestGameBoard {
+	private GameBoard gb;
 	private CompressedGameBoard cb1 = null, cb2 = null, cb3 = null;
 	
 	public TestGameBoard() {
-		GameBoard gb = new GameBoard();
+		gb = new GameBoard();
 		GameBoard copy = gb.copy();
 
 		GameBoard diff = new GameBoard();
