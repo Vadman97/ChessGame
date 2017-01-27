@@ -14,7 +14,7 @@ public class AIPlayer implements Player {
 
 	public static final int REPEATED_MOVE_PENALTY = 10000;
 
-	private static final boolean UI_ENABLED = false;
+	private static final boolean UI_ENABLED = true;
 
 	private int playerColor;
 	int depth = 6;
@@ -64,11 +64,13 @@ public class AIPlayer implements Player {
 				depth -= 2;
 			}
 		}*/
-		if (board.getNumAllPieces() < 25) {
+		if (board.getNumAllPieces() < 17) {
+			depth = 24;
+		} else if (board.getNumAllPieces() < 25) {
 			depth = 12;
 		}
 
-		System.out.println("AI Think time: " + timeSec + " depth: " + depth + " pieces: " + board.getNumAllPieces());
+		System.out.println("AI Think time: " + timeSec + " pieces: " + board.getNumAllPieces());
 		thinking = false;
 		return move;
 	}
@@ -172,8 +174,9 @@ public class AIPlayer implements Player {
 				break;
 			}
 			firstGuess = getBestMoveMTDF(board, firstGuess.score, d);
+			System.out.println("Searched to depth " + d + " and found move score " + firstGuess.score);
 		}
-		System.out.println("Searched to depth " + (d - 1));
+		System.out.println("Finished search to depth " + (d - 1));
 		return firstGuess;
 	}
 
@@ -196,7 +199,7 @@ public class AIPlayer implements Player {
 		System.out.println(benchMark + " nodes searched in " + time);
 		double tpn = benchMark / time;
 		System.out.format("Nodes per second: %.3f\n", tpn);
-		System.out.println("NEW AI Total Notes: " + totalNodes + " Sec: " + (totalTime / 1e9));
+		System.out.println("AI Total Notes: " + totalNodes + " Sec: " + (totalTime / 1e9));
 		if (best.move == null) {
 			System.out.println("No good move found! Picking first possible move.");
 			if (board.getAllPossibleMoves(playerColor).size() == 0) {
@@ -220,7 +223,7 @@ public class AIPlayer implements Player {
 	 * always evaluate from the perspective of the current player
 	 */
 	public int evaluateBoard(GameBoard board) {
-		int pColor = playerColor;//board.currentColor; // pColor is row 6-7
+		int pColor = board.currentColor;//playerColor; // pColor is row 6-7
 		int eColor = Piece.getOppositeColor(pColor); // eColor is row 0-1
 
 		// System.out.println((pColor == Piece.BLACK ? "Black" : "White"));
