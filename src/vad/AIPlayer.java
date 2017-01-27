@@ -19,7 +19,7 @@ public class AIPlayer implements Player {
 	private int playerColor;
 	int depth = 6;
 	GameBoard realBoard;
-	HashMap<CompressedGameBoard, TranspositionTableEntry2> cache2 = new HashMap<>(CACHE_INITIAL_SIZE, CACHE_LOAD_FACTOR);
+	HashMap<CompressedGameBoard, TranspositionTableEntry> cache = new HashMap<>(CACHE_INITIAL_SIZE, CACHE_LOAD_FACTOR);
 
 	ChessGUI gui;
 	GameBoard lastBoardConfig;
@@ -85,8 +85,8 @@ public class AIPlayer implements Player {
 
 	public ScoredMove AlphaBetaWithMemory(GameBoard board, int alpha, int beta, int d) {
 		CompressedGameBoard cb = new CompressedGameBoard(board);
-		if (cache2.containsKey(cb)) {
-			TranspositionTableEntry2 entry = cache2.get(cb);
+		if (cache.containsKey(cb)) {
+			TranspositionTableEntry entry = cache.get(cb);
 			if (entry.getLower() >= beta) {
 				return new ScoredMove(entry.getMove(), entry.getLower());
 			}
@@ -135,18 +135,17 @@ public class AIPlayer implements Player {
 			}
 		}
 		if (score <= alpha) {
-			cache2.put(cb, new TranspositionTableEntry2(MIN, score, best));
+			cache.put(cb, new TranspositionTableEntry(MIN, score, best));
 		}
 		if (score > alpha && score < beta) {
-			cache2.put(cb, new TranspositionTableEntry2(score, score, best));
+			cache.put(cb, new TranspositionTableEntry(score, score, best));
 		}
 		if (score >= beta) {
-			cache2.put(cb, new TranspositionTableEntry2(score, MAX, best));
+			cache.put(cb, new TranspositionTableEntry(score, MAX, best));
 		}
 		return new ScoredMove(best, score);
 	}
 
-	// every other move is good then bad, corresponds with the setpoint of lb, ub??
 	public ScoredMove getBestMoveMTDF(GameBoard board, int startScore, int d) {
 		int lb = MIN;
 		int ub = MAX;
@@ -160,7 +159,6 @@ public class AIPlayer implements Player {
 				lb = g.score;
 			}
 		} while (lb < ub);
-		System.out.println("Best move: " + g.score);
 		return g;
 	}
 	
@@ -175,7 +173,7 @@ public class AIPlayer implements Player {
 			}
 			firstGuess = getBestMoveMTDF(board, firstGuess.score, d);
 		}
-		System.out.println("Searched to depth " + d);
+		System.out.println("Searched to depth " + (d - 1));
 		return firstGuess;
 	}
 
@@ -314,9 +312,6 @@ public class AIPlayer implements Player {
 			}
 		}
 
-		// KING HOME BROKEN
-		// PIECESNOTTONFIRSTROW BROKEN
-
 		// king safety - keep king on starting row, pieces around king
 		// spaces protected/attacked by pawns
 		// prevent king reward for moving forward
@@ -347,8 +342,6 @@ public class AIPlayer implements Player {
 
 		score += aggressive + defensive;
 		
-		//TODO castling is broken again
-
 		return score;
 	}
 

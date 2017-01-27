@@ -46,6 +46,7 @@ public class Main {
 			p2 = ((ClientPlayerFactory) new RMIConnection(socket.accept()).getBind()).create(Piece.BLACK);
 			socket.close();
 		} else {
+			// p2 = new UserPlayer(Piece.getOppositeColor(col));
 			p2 = new AIPlayer(Piece.getOppositeColor(col));
 			// p2 = new OldAIPlayer(Piece.getOppositeColor(col));
 		}
