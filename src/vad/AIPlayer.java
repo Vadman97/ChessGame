@@ -56,13 +56,16 @@ public class AIPlayer implements Player {
 		long end = System.currentTimeMillis();
 		double timeSec = (end - start) / 1000.;
 
-		if (board.getNumAllPieces() < 20) {
+		/*if (board.getNumAllPieces() < 20) {
 			// increase search depth if our search space gets smaller
 			if (timeSec < 1. && depth < 10) {
 				depth += 2;
 			} else if (timeSec > 30.) {
 				depth -= 2;
 			}
+		}*/
+		if (board.getNumAllPieces() < 25) {
+			depth = 12;
 		}
 
 		System.out.println("AI Think time: " + timeSec + " depth: " + depth + " pieces: " + board.getNumAllPieces());
@@ -144,10 +147,10 @@ public class AIPlayer implements Player {
 	}
 
 	// every other move is good then bad, corresponds with the setpoint of lb, ub??
-	public Move getBestMoveMTDF(GameBoard board, int d) {
+	public ScoredMove getBestMoveMTDF(GameBoard board, int startScore, int d) {
 		int lb = MIN;
 		int ub = MAX;
-		ScoredMove g = new ScoredMove(null, MIN);
+		ScoredMove g = new ScoredMove(null, startScore);
 		do {
 			int beta = g.score == lb ? g.score + 1 : g.score;
 			g = AlphaBetaWithMemory(board, beta - 1, beta, d);
@@ -158,24 +161,22 @@ public class AIPlayer implements Player {
 			}
 		} while (lb < ub);
 		System.out.println("Best move: " + g.score);
-		return g.move;
+		return g;
 	}
 	
-	public Move getBestMoveIterativeMTDF(GameBoard board, int max_depth) {
-		return null;
-//		firstguess := 0;
-//		for d = 1 to MAX_SEARCH_DEPTH do
-//		firstguess := MTDF(root, firstguess, d);
-//		if times_up() then break;
-//		return firstguess;
-		
-//		ScoredMove firstGuess = new ScoredMove(null, 0);
-//		for (int d = 1; d <= max_depth; d++) {
-//			firstGuess = getBestMoveMTDF(board, firstGuess, d);
-//			if (times_up())
-//				break;
-//		}
-//		return firstGuess;
+	public ScoredMove getBestMoveIterativeMTDF(GameBoard board, int max_depth) {
+		long MAX_MOVE_TIME = (long) 5e9;
+		long startTime = System.nanoTime();
+		ScoredMove firstGuess = new ScoredMove(null, 0);
+		int d = 1;
+		for (d = 1; d <= max_depth; d++) {
+			if (System.nanoTime() - startTime > MAX_MOVE_TIME) {
+				break;
+			}
+			firstGuess = getBestMoveMTDF(board, firstGuess.score, d);
+		}
+		System.out.println("Searched to depth " + d);
+		return firstGuess;
 	}
 
 	public Move getBestMove(GameBoard board, int d) {
@@ -185,11 +186,12 @@ public class AIPlayer implements Player {
 		 * - which is the optimal result.
 		 */
 		System.out.println("My aggressive multiplier is " + aggrMult + " and defensive multiplier is " + defMult);
-		System.out.println("New AI Thinking..... d: " + d);
+		System.out.println("AI Thinking.....");
 		benchMark = 0;
 		long start = System.nanoTime();
 
-		Move ret = getBestMoveMTDF(board, d);
+		ScoredMove best = getBestMoveIterativeMTDF(board, d);
+		System.out.println("Best move score: " + best.score);
 		totalNodes += benchMark;
 		totalTime += (System.nanoTime() - start);
 		double time = (System.nanoTime() - start) / 1.0e9;
@@ -197,7 +199,7 @@ public class AIPlayer implements Player {
 		double tpn = benchMark / time;
 		System.out.format("Nodes per second: %.3f\n", tpn);
 		System.out.println("NEW AI Total Notes: " + totalNodes + " Sec: " + (totalTime / 1e9));
-		if (ret == null) {
+		if (best.move == null) {
 			System.out.println("No good move found! Picking first possible move.");
 			if (board.getAllPossibleMoves(playerColor).size() == 0) {
 				System.out.println("~~~~~~~~~I RESIGN~~~~~~~~~~");
@@ -213,7 +215,7 @@ public class AIPlayer implements Player {
 			}
 			return board.getAllPossibleMoves(playerColor).get(0);
 		}
-		return ret;
+		return best.move;
 	}
 
 	/*
@@ -333,7 +335,7 @@ public class AIPlayer implements Player {
 		aggressive += 1 * (pawnMobility[pColor] - pawnMobility[eColor]);
 		aggressive += 1 * (pawnAdvancedCentered[pColor] - pawnAdvancedCentered[eColor]);
 		aggressive += 1 * (pieceMobility[pColor] - pieceMobility[eColor]);
-		aggressive += 16 * (piecesNotOnFirstRow[pColor] - piecesNotOnFirstRow[eColor]);
+		aggressive += 32 * (piecesNotOnFirstRow[pColor] - piecesNotOnFirstRow[eColor]);
 		aggressive += 16 * (pawnColumnPenalty[pColor] - pawnColumnPenalty[eColor]);
 		aggressive += 32 * (knighNotIsolated[pColor] - knighNotIsolated[eColor]);
 		aggressive += 1 * (squaresControlled[pColor] - squaresControlled[eColor]);
@@ -344,6 +346,8 @@ public class AIPlayer implements Player {
 		// defensive *= 4 - aggrMult;
 
 		score += aggressive + defensive;
+		
+		//TODO castling is broken again
 
 		return score;
 	}
