@@ -18,13 +18,10 @@ public class AIPlayer implements Player {
 
 	private int playerColor;
 	int depth = 6;
-	GameBoard realBoard;
 	HashMap<CompressedGameBoard, TranspositionTableEntry> cache = new HashMap<>(CACHE_INITIAL_SIZE, CACHE_LOAD_FACTOR);
 
 	ChessGUI gui;
-	GameBoard lastBoardConfig;
 
-	int protectedValWeight = 2;
 	int benchMark;
 
 	Random r = new Random();
@@ -33,6 +30,9 @@ public class AIPlayer implements Player {
 
 	public long totalTime = 0;
 	public long totalNodes = 0;
+	
+	public int myRow = -1;
+	
 	/* values from 1-4 */
 	private int aggrMult, defMult;
 
@@ -48,10 +48,15 @@ public class AIPlayer implements Player {
 	@Override
 	public Move makeMove(CompressedGameBoard cpdboard) {
 		GameBoard board = cpdboard.getGameBoard();
-		realBoard = board;
 		long start = System.currentTimeMillis();
 		thinking = true;
-		lastBoardConfig = board.copy(); // apply past config
+		if (myRow == -1) {
+			if (board.getPiece(Position.get(0, 0)).getColor() == playerColor) 
+				myRow = 0;
+			else
+				myRow = 7;
+		}
+		
 		Move move = getBestMove(board, depth);
 		long end = System.currentTimeMillis();
 		double timeSec = (end - start) / 1000.;
@@ -223,7 +228,7 @@ public class AIPlayer implements Player {
 	 * always evaluate from the perspective of the current player
 	 */
 	public int evaluateBoard(GameBoard board) {
-		int pColor = board.currentColor;//playerColor; // pColor is row 6-7
+		int pColor = playerColor; //board.currentColor; // pColor is row 6-7
 		int eColor = Piece.getOppositeColor(pColor); // eColor is row 0-1
 
 		// System.out.println((pColor == Piece.BLACK ? "Black" : "White"));
@@ -253,19 +258,17 @@ public class AIPlayer implements Player {
 
 					if (piece.getType() == Piece.KING) {
 						castled[piece.getColor()] = (short) (board.hasCastled(piece.getColor()) ? 1 : 0);
-
-						if (piece.getColor() == pColor) {
-							kingHome[piece.getColor()] += (row == 7) ? 1 : 0;
-						} else {
-							kingHome[piece.getColor()] += (row == 0) ? 1 : 0;
-						}
+						kingHome[piece.getColor()] += (row == myRow) ? 1 : 0;
 					} else if (piece.getType() == Piece.PAWN) {
 						short rowValue;
+						
+						//TODO REWRITE
 						if (piece.getColor() == pColor)
 							rowValue = (short) (6 - row);
 						else
 							rowValue = (short) (row - 1);
-
+						//TODO REWRITE
+						
 						short colValue = (short) Math.round(3.5 - Math.abs(3.5 - col));
 
 						// linear mobility bonus per distance out
@@ -285,10 +288,13 @@ public class AIPlayer implements Player {
 						pawnColumnOccupied[piece.getColor()][col] = true;
 					} else {
 						short val;
+						
+						//TODO REWRITE
 						if (piece.getColor() == pColor)
 							val = (short) (7 - row);
 						else
 							val = (short) (row);
+						//TODO REWRITE
 
 						// linear mobility bonus per distance out
 						pieceMobility[piece.getColor()] += val;
@@ -301,14 +307,8 @@ public class AIPlayer implements Player {
 								knighNotIsolated[piece.getColor()]++;
 						}
 
-						if (piece.getColor() == pColor) {
-							if (row != 7) {
-								piecesNotOnFirstRow[piece.getColor()]++;
-							}
-						} else {
-							if (row != 0) {
-								piecesNotOnFirstRow[piece.getColor()]++;
-							}
+						if (row != myRow) {
+							piecesNotOnFirstRow[piece.getColor()]++;
 						}
 					}
 				}
