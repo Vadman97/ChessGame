@@ -39,7 +39,7 @@ public class Main {
 
 	public static void main(String[] args) throws IOException {
 		Random r = new Random();
-		int col = r.nextInt(2);
+		int col = Piece.WHITE;//r.nextInt(2);
 		Player p2;
 		if (NETWORKING) {
 			ServerSocket socket = new ServerSocket(12345);
@@ -51,8 +51,8 @@ public class Main {
 			// p2 = new OldAIPlayer(Piece.getOppositeColor(col));
 		}
 		// Player p1 = new DebugPlayer(col, (AIPlayer) p2);
-		// Player p1 = new UserPlayer(col);
-		Player p1 = new AIPlayer(col);
+		Player p1 = new UserPlayer(col);
+		// Player p1 = new AIPlayer(col);
 
 		startGame(p1, p2);
 	}

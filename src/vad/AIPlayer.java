@@ -14,10 +14,13 @@ public class AIPlayer implements Player {
 
 	public static final int REPEATED_MOVE_PENALTY = 10000;
 
-	private static final boolean UI_ENABLED = true;
+	private static final boolean UI_ENABLED = false;
+	
+	public static long SEARCH_LIMIT_NS = (long) (10 * 1e9); //nanoseconds
 
+	long searchStart;
 	private int playerColor;
-	int depth = 6;
+	int depth = 1000;
 	HashMap<CompressedGameBoard, TranspositionTableEntry> cache = new HashMap<>(CACHE_INITIAL_SIZE, CACHE_LOAD_FACTOR);
 
 	ChessGUI gui;
@@ -31,7 +34,7 @@ public class AIPlayer implements Player {
 	public long totalTime = 0;
 	public long totalNodes = 0;
 	
-	public int myRow = -1;
+	public int myRow = -1, enemyRow = -1;
 	
 	/* values from 1-4 */
 	private int aggrMult, defMult;
@@ -51,10 +54,13 @@ public class AIPlayer implements Player {
 		long start = System.currentTimeMillis();
 		thinking = true;
 		if (myRow == -1) {
-			if (board.getPiece(Position.get(0, 0)).getColor() == playerColor) 
+			if (board.getPiece(Position.get(0, 0)).getColor() == playerColor) {
 				myRow = 0;
-			else
+				enemyRow = 7;
+			} else {
 				myRow = 7;
+				enemyRow = 0;
+			}
 		}
 		
 		Move move = getBestMove(board, depth);
@@ -70,9 +76,9 @@ public class AIPlayer implements Player {
 			}
 		}*/
 		if (board.getNumAllPieces() < 17) {
-			depth = 24;
+			SEARCH_LIMIT_NS = (long) (20 * 1e9);
 		} else if (board.getNumAllPieces() < 25) {
-			depth = 12;
+			SEARCH_LIMIT_NS = (long) (30 * 1e9);
 		}
 
 		System.out.println("AI Think time: " + timeSec + " pieces: " + board.getNumAllPieces());
@@ -91,6 +97,8 @@ public class AIPlayer implements Player {
 	}
 
 	public ScoredMove AlphaBetaWithMemory(GameBoard board, int alpha, int beta, int d) {
+		if (System.nanoTime() - searchStart > SEARCH_LIMIT_NS)
+			return null;
 		CompressedGameBoard cb = new CompressedGameBoard(board);
 		if (cache.containsKey(cb)) {
 			TranspositionTableEntry entry = cache.get(cb);
@@ -117,11 +125,13 @@ public class AIPlayer implements Player {
 					break;
 				board.apply(child);
 				ScoredMove val = AlphaBetaWithMemory(board, a, beta, d - 1);
+				board.undo(child);
+				if (val == null)
+					return null;
 				if (val.score > score) {
 					score = val.score;
 					best = child;
 				}
-				board.undo(child);
 				a = Math.max(a, score);
 			}
 		} else {
@@ -133,11 +143,13 @@ public class AIPlayer implements Player {
 					break;
 				board.apply(child);
 				ScoredMove val = AlphaBetaWithMemory(board, alpha, b, d - 1);
+				board.undo(child);
+				if (val == null)
+					return null;
 				if (val.score < score) {
 					score = val.score;
 					best = child;
 				}
-				board.undo(child);
 				b = Math.min(b, score);
 			}
 		}
@@ -158,8 +170,13 @@ public class AIPlayer implements Player {
 		int ub = MAX;
 		ScoredMove g = new ScoredMove(null, startScore);
 		do {
+			if (System.nanoTime() - searchStart > SEARCH_LIMIT_NS)
+				return null;
+			
 			int beta = g.score == lb ? g.score + 1 : g.score;
 			g = AlphaBetaWithMemory(board, beta - 1, beta, d);
+			if (g == null)
+				return null;
 			if (g.score < beta) {
 				ub = g.score;
 			} else {
@@ -170,15 +187,21 @@ public class AIPlayer implements Player {
 	}
 	
 	public ScoredMove getBestMoveIterativeMTDF(GameBoard board, int max_depth) {
-		long MAX_MOVE_TIME = (long) 5e9;
-		long startTime = System.nanoTime();
+		searchStart = System.nanoTime();
 		ScoredMove firstGuess = new ScoredMove(null, 0);
 		int d = 1;
 		for (d = 1; d <= max_depth; d++) {
-			if (System.nanoTime() - startTime > MAX_MOVE_TIME) {
+			if (System.nanoTime() - searchStart > SEARCH_LIMIT_NS) {
 				break;
 			}
-			firstGuess = getBestMoveMTDF(board, firstGuess.score, d);
+			ScoredMove temp = getBestMoveMTDF(board, firstGuess.score, d);
+			if (temp == null) {
+				System.out.println("Ran out of time! Aborting");
+				d--;
+				break;
+			} else
+				firstGuess = temp;
+				
 			System.out.println("Searched to depth " + d + " and found move score " + firstGuess.score);
 		}
 		System.out.println("Finished search to depth " + (d - 1));
@@ -251,6 +274,7 @@ public class AIPlayer implements Player {
 			for (short row = 0; row < GameBoard.HEIGHT; row++) {
 				Piece piece = board.getPiece(Position.get(col, row));
 				if (piece != null) {
+					int playerStartRow = (piece.getColor() == pColor) ? myRow : enemyRow;
 					countPieces[piece.getColor()][piece.getType()]++;
 
 					squaresControlled[piece.getColor()] += MoveHelper.getReachablePosition(board, col, row, true)
@@ -258,17 +282,9 @@ public class AIPlayer implements Player {
 
 					if (piece.getType() == Piece.KING) {
 						castled[piece.getColor()] = (short) (board.hasCastled(piece.getColor()) ? 1 : 0);
-						kingHome[piece.getColor()] += (row == myRow) ? 1 : 0;
+						kingHome[piece.getColor()] += (row == playerStartRow) ? 1 : 0;
 					} else if (piece.getType() == Piece.PAWN) {
-						short rowValue;
-						
-						//TODO REWRITE
-						if (piece.getColor() == pColor)
-							rowValue = (short) (6 - row);
-						else
-							rowValue = (short) (row - 1);
-						//TODO REWRITE
-						
+						short rowValue = (short) (Math.abs(playerStartRow - row) - 1);
 						short colValue = (short) Math.round(3.5 - Math.abs(3.5 - col));
 
 						// linear mobility bonus per distance out
@@ -287,33 +303,23 @@ public class AIPlayer implements Player {
 							pawnColumnPenalty[piece.getColor()]++;
 						pawnColumnOccupied[piece.getColor()][col] = true;
 					} else {
-						short val;
-						
-						//TODO REWRITE
-						if (piece.getColor() == pColor)
-							val = (short) (7 - row);
-						else
-							val = (short) (row);
-						//TODO REWRITE
+						short rowValue = (short) Math.abs(playerStartRow - row);
 
 						// linear mobility bonus per distance out
-						pieceMobility[piece.getColor()] += val;
-						// bonus for getting off start position
-						if (val != 0)
-							pieceMobility[piece.getColor()] += 2;
+						pieceMobility[piece.getColor()] += rowValue;
 
 						if (piece.getType() == Piece.KNIGHT) {
 							if (col != 0 && col != 7)
 								knighNotIsolated[piece.getColor()]++;
 						}
 
-						if (row != myRow) {
+						if (row != playerStartRow && piece.getType() != Piece.ROOK)
 							piecesNotOnFirstRow[piece.getColor()]++;
-						}
 					}
 				}
 			}
 		}
+		//BROKEN pawnAdvancedCentered, pieceMobility, pawnMobility
 
 		// king safety - keep king on starting row, pieces around king
 		// spaces protected/attacked by pawns
@@ -327,13 +333,13 @@ public class AIPlayer implements Player {
 		score += 5 * (countPieces[pColor][Piece.ROOK] - countPieces[eColor][Piece.ROOK]);
 		score += 9 * (countPieces[pColor][Piece.QUEEN] - countPieces[eColor][Piece.QUEEN]);
 		score += 100 * ((board.isCheckMate(eColor) ? 1 : 0) - (board.isCheckMate(pColor) ? 1 : 0));
-		score *= 64;
+		score *= 128;
 
 		aggressive += 32 * ((board.isCheck(eColor) ? 1 : 0) - (board.isCheck(pColor) ? 1 : 0));
 		aggressive += 1 * (pawnMobility[pColor] - pawnMobility[eColor]);
 		aggressive += 1 * (pawnAdvancedCentered[pColor] - pawnAdvancedCentered[eColor]);
 		aggressive += 1 * (pieceMobility[pColor] - pieceMobility[eColor]);
-		aggressive += 32 * (piecesNotOnFirstRow[pColor] - piecesNotOnFirstRow[eColor]);
+		aggressive += 16 * (piecesNotOnFirstRow[pColor] - piecesNotOnFirstRow[eColor]);
 		aggressive += 16 * (pawnColumnPenalty[pColor] - pawnColumnPenalty[eColor]);
 		aggressive += 32 * (knighNotIsolated[pColor] - knighNotIsolated[eColor]);
 		aggressive += 1 * (squaresControlled[pColor] - squaresControlled[eColor]);
@@ -342,7 +348,7 @@ public class AIPlayer implements Player {
 		defensive += 128 * (kingHome[pColor] - kingHome[eColor]);
 		defensive += 64 * (castled[pColor] - castled[eColor]);
 		// defensive *= 4 - aggrMult;
-
+		
 		score += aggressive + defensive;
 		
 		return score;
