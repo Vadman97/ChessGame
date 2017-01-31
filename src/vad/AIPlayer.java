@@ -384,7 +384,7 @@ public class AIPlayer implements Player {
 		// defensive *= 4 - aggrMult;
 		
 		for (Move move: lastMoves) {
-			if (m.equals(move)) {
+			if (m != null && m.equals(move)) {
 				defensive -= 64;
 			}
 		}

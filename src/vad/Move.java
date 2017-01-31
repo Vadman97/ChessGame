@@ -79,6 +79,8 @@ public class Move implements Serializable
 	}
 	
 	public boolean equals(Move other) {
+		if (other == null)
+			return false;
 		if (getStartPosition() == other.getStartPosition())
 			if (getDestPosition() == other.getDestPosition())
 				if (startPiece == other.startPiece)
