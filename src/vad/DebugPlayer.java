@@ -46,6 +46,7 @@ public class DebugPlayer implements Player {
 		//return moves.get(0);
 		if (moves.size() == 0)
 			return null;
+		
 		return moves.get(r.nextInt(moves.size()));
 
 		// if (moves[currentMove][0] == null) return null;

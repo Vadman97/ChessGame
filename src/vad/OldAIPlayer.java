@@ -3,7 +3,6 @@ package vad;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class OldAIPlayer implements Player {
 	public static final int CACHE_INITIAL_SIZE = 2000003;
@@ -22,8 +21,6 @@ public class OldAIPlayer implements Player {
 	int enemyColor;
 	int depth = 4;
 	GameBoard realBoard;
-	ConcurrentHashMap<CompressedGameBoard, TranspositionTableEntry> cache = new ConcurrentHashMap<>(CACHE_INITIAL_SIZE,
-			CACHE_LOAD_FACTOR, CACHE_NUM_SHARDS);
 
 	private volatile int globalAlpha = MAX;
 	private volatile int globalBeta = MIN;
@@ -355,14 +352,7 @@ public class OldAIPlayer implements Player {
 		if (ret == null) {
 			System.out.println("No good move found! Picking first possible move.");
 			if (board.getAllPossibleMoves(playerColor).size() == 0) {
-				System.out.println("~~~~~~~~~I RETIRE~~~~~~~~~~");
-				while (true) {
-					try {
-						Thread.sleep(100);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
+				return null;
 			}
 			return board.getAllPossibleMoves(playerColor).get(0);
 		}

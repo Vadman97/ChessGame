@@ -33,7 +33,18 @@ public class Main {
 			CompressedGameBoard b = new CompressedGameBoard(board);
 			p1.update(b);
 			p2.update(b);
-			board.apply(players[currentTurn].makeMove(b));
+			Move m = players[currentTurn].makeMove(b);
+			if (m == null) {
+				System.out.println("~~~~~~~" + players[currentTurn].getClass().getName() + " Defeated~~~~~~~~~");
+				while (true) {
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+			board.apply(m);
 		}
 	}
 
@@ -51,7 +62,8 @@ public class Main {
 			// p2 = new OldAIPlayer(Piece.getOppositeColor(col));
 		}
 		// Player p1 = new DebugPlayer(col, (AIPlayer) p2);
-		Player p1 = new UserPlayer(col);
+		// Player p1 = new UserPlayer(col);
+		Player p1 = new OldAIPlayer(col);
 		// Player p1 = new AIPlayer(col);
 
 		startGame(p1, p2);
