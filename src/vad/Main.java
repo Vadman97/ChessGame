@@ -62,9 +62,9 @@ public class Main {
 			// p2 = new OldAIPlayer(Piece.getOppositeColor(col));
 		}
 		// Player p1 = new DebugPlayer(col, (AIPlayer) p2);
-		// Player p1 = new UserPlayer(col);
+		 Player p1 = new UserPlayer(col);
 		// Player p1 = new OldAIPlayer(col);
-		Player p1 = new AIPlayer(col);
+		// Player p1 = new AIPlayer(col);
 
 		startGame(p1, p2);
 	}

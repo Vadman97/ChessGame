@@ -16,7 +16,7 @@ public class AIPlayer implements Player {
 
 	public static final int REPEATED_MOVE_PENALTY = 10000;
 
-	private static final boolean UI_ENABLED = true;
+	private static final boolean UI_ENABLED = false;
 
 	public static long SEARCH_LIMIT_NS = (long) (7 * 1e9); // nanoseconds
 
@@ -253,6 +253,25 @@ public class AIPlayer implements Player {
 		return best.move;
 	}
 
+	public int countKingSurrounding(GameBoard board, Position kingPos) {
+		Piece king = board.getPiece(kingPos);
+		int count = 0;
+		for (int i = -1; i <= 1; i++) {
+			for (int j = -1; j <= 1; j++) {
+				int c = kingPos.col + i, r = kingPos.row + j;
+				if (c < 0 || c > 7 || r < 0 || r > 7)
+					continue;
+				Position pos = Position.get(c, r);
+				Piece p = board.getPiece(pos);
+				
+				//count our pieces surrounding the king
+				if (p != null && p.getColor() == king.getColor())
+					count++;
+			}
+		}
+		return count;
+	}
+	
 	/*
 	 * always evaluate from the perspective of the current player
 	 */
@@ -275,6 +294,7 @@ public class AIPlayer implements Player {
 		short[] squaresControlled = new short[Piece.COLORS.length];
 		short[] piecesNotOnFirstRow = new short[Piece.COLORS.length];
 		short[] kingHome = new short[Piece.COLORS.length];
+		short[] piecesSurroundingKing = new short[Piece.COLORS.length];
 		short[] rookOpenCol = new short[Piece.COLORS.length];
 
 		for (short col = 0; col < GameBoard.WIDTH; col++) {
@@ -290,6 +310,7 @@ public class AIPlayer implements Player {
 					if (piece.getType() == Piece.KING) {
 						castled[piece.getColor()] = (short) (board.hasCastled(piece.getColor()) ? 1 : 0);
 						kingHome[piece.getColor()] += (row == playerStartRow) ? 1 : 0;
+						piecesSurroundingKing[piece.getColor()] += countKingSurrounding(board, Position.get(col,  row));
 					} else if (piece.getType() == Piece.PAWN) {
 						short rowValue = (short) (Math.abs(playerStartRow - row) - 1);
 						short colValue = (short) Math.round(3.5 - Math.abs(3.5 - col));
@@ -356,6 +377,8 @@ public class AIPlayer implements Player {
 		// rook having an open column (no friendlies in the way)
 
 		// pawn promotion undo still broken
+		// play with pawn heuristic weights
+		// prevent cycles in search by using a set of moves checked?
 
 		score += 1 * (countPieces[pColor][Piece.PAWN] - countPieces[eColor][Piece.PAWN]);
 		score += 3 * (countPieces[pColor][Piece.BISHOP] - countPieces[eColor][Piece.BISHOP]);
@@ -369,17 +392,18 @@ public class AIPlayer implements Player {
 
 		// aggressive += 32 * ((board.isCheck(eColor) ? 1 : 0) -
 		// (board.isCheck(pColor) ? 1 : 0));
-		aggressive += 1 * (pawnMobility[pColor] - pawnMobility[eColor]);
-		aggressive += 1 * (pawnAdvancedCentered[pColor] - pawnAdvancedCentered[eColor]);
+		aggressive += 2 * (pawnMobility[pColor] - pawnMobility[eColor]);
+		aggressive += 2 * (pawnAdvancedCentered[pColor] - pawnAdvancedCentered[eColor]);
 		aggressive += 1 * (pieceMobility[pColor] - pieceMobility[eColor]);
 		aggressive += 32 * (piecesNotOnFirstRow[pColor] - piecesNotOnFirstRow[eColor]);
 		aggressive += 16 * (pawnColumnPenalty[pColor] - pawnColumnPenalty[eColor]);
 		aggressive += 32 * (knighNotIsolated[pColor] - knighNotIsolated[eColor]);
-		aggressive += 1 * (squaresControlled[pColor] - squaresControlled[eColor]);
+		aggressive += 2 * (squaresControlled[pColor] - squaresControlled[eColor]);
 		aggressive += 32 * (rookOpenCol[pColor] - rookOpenCol[eColor]);
 		// aggressive *= aggrMult;
 
-		defensive += 128 * (kingHome[pColor] - kingHome[eColor]);
+		defensive += 64 * (kingHome[pColor] - kingHome[eColor]);
+		defensive += 8 * (piecesSurroundingKing[pColor] - piecesSurroundingKing[eColor]);
 		defensive += 64 * (castled[pColor] - castled[eColor]);
 		// defensive *= 4 - aggrMult;
 		
