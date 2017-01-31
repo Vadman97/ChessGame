@@ -195,13 +195,8 @@ public class GameBoard
 			}
 		} else if (movedPiece.getType() == Piece.PAWN) {
 			//Pawn promotion undo
-			if (movedPiece.getColor() == Piece.WHITE) {
-				if (dest.getRow() == 0)
-					movedPiece = new Piece(movedPiece.getColor(), Piece.PAWN);
-			} else if (movedPiece.getColor() == Piece.BLACK) {
-				if (dest.getRow() == 7)
-					movedPiece = new Piece(movedPiece.getColor(), Piece.PAWN);
-			}
+			if (dest.getRow() == 0 || dest.getRow() == 7)
+				movedPiece = new Piece(movedPiece.getColor(), Piece.PAWN);
 		}
 
 		setPiece(move.getStartPosition(), movedPiece);

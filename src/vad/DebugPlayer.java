@@ -1,9 +1,13 @@
 package vad;
 
+import java.util.ArrayList;
+import java.util.Random;
+
 public class DebugPlayer implements Player {
 	ChessGUI gui;
 	int playerColor;
 	AIPlayer opponent;
+	Random r;
 
 	int movesMade = 0;
 	int currentMove = 0;
@@ -14,6 +18,7 @@ public class DebugPlayer implements Player {
 		this.playerColor = playerColor;
 		this.opponent = opponent;
 		gui = new ChessGUI(null, playerColor);
+		r = new Random();
 	}
 
 	@Override
@@ -32,12 +37,16 @@ public class DebugPlayer implements Player {
 		if (movesMade == 11) {
 			System.out.println("============ 10 MOVES HAVE BEEN PLAYED===========");
 			System.out.println(opponent.totalNodes + " " + (opponent.totalTime / 1e9));
-			System.exit(0);
+			//System.exit(0);
 		}
 
 		movesMade++;
 
-		return b.getAllPossibleMoves(playerColor).get(0);
+		ArrayList<Move> moves = b.getAllPossibleMoves(playerColor);
+		//return moves.get(0);
+		if (moves.size() == 0)
+			return null;
+		return moves.get(r.nextInt(moves.size()));
 
 		// if (moves[currentMove][0] == null) return null;
 		//
@@ -48,7 +57,7 @@ public class DebugPlayer implements Player {
 		//
 		// return m;
 	}
-	
+
 	@Override
 	public int getColor() {
 		return playerColor;

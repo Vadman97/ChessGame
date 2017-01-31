@@ -39,7 +39,7 @@ public class Main {
 
 	public static void main(String[] args) throws IOException {
 		Random r = new Random();
-		int col = Piece.WHITE;//r.nextInt(2);
+		int col = Piece.WHITE;// r.nextInt(2);
 		Player p2;
 		if (NETWORKING) {
 			ServerSocket socket = new ServerSocket(12345);

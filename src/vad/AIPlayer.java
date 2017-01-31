@@ -16,7 +16,7 @@ public class AIPlayer implements Player {
 
 	private static final boolean UI_ENABLED = false;
 	
-	public static long SEARCH_LIMIT_NS = (long) (10 * 1e9); //nanoseconds
+	public static long SEARCH_LIMIT_NS = (long) (7 * 1e9); //nanoseconds
 
 	long searchStart;
 	private int playerColor;
@@ -78,7 +78,7 @@ public class AIPlayer implements Player {
 		if (board.getNumAllPieces() < 17) {
 			SEARCH_LIMIT_NS = (long) (20 * 1e9);
 		} else if (board.getNumAllPieces() < 25) {
-			SEARCH_LIMIT_NS = (long) (30 * 1e9);
+			SEARCH_LIMIT_NS = (long) (14 * 1e9);
 		}
 
 		System.out.println("AI Think time: " + timeSec + " pieces: " + board.getNumAllPieces());
@@ -171,12 +171,11 @@ public class AIPlayer implements Player {
 		ScoredMove g = new ScoredMove(null, startScore);
 		do {
 			if (System.nanoTime() - searchStart > SEARCH_LIMIT_NS)
-				return null;
-			
+				break;
 			int beta = g.score == lb ? g.score + 1 : g.score;
 			g = AlphaBetaWithMemory(board, beta - 1, beta, d);
 			if (g == null)
-				return null;
+				break;
 			if (g.score < beta) {
 				ub = g.score;
 			} else {
@@ -204,7 +203,7 @@ public class AIPlayer implements Player {
 				
 			System.out.println("Searched to depth " + d + " and found move score " + firstGuess.score);
 		}
-		System.out.println("Finished search to depth " + (d - 1));
+		System.out.println("Finished search to depth " + (d - 1) + " with score " + firstGuess.score);
 		return firstGuess;
 	}
 
@@ -326,16 +325,18 @@ public class AIPlayer implements Player {
 		// prevent king reward for moving forward
 		// why are scores neg? something problematic with the score for the two
 		// sides
+		// rook having an open column (no friendlies in the way)
 
 		score += 1 * (countPieces[pColor][Piece.PAWN] - countPieces[eColor][Piece.PAWN]);
 		score += 3 * (countPieces[pColor][Piece.BISHOP] - countPieces[eColor][Piece.BISHOP]);
 		score += 3 * (countPieces[pColor][Piece.KNIGHT] - countPieces[eColor][Piece.KNIGHT]);
 		score += 5 * (countPieces[pColor][Piece.ROOK] - countPieces[eColor][Piece.ROOK]);
 		score += 9 * (countPieces[pColor][Piece.QUEEN] - countPieces[eColor][Piece.QUEEN]);
-		score += 100 * ((board.isCheckMate(eColor) ? 1 : 0) - (board.isCheckMate(pColor) ? 1 : 0));
-		score *= 128;
+		score += 100 * (countPieces[pColor][Piece.KING] - countPieces[eColor][Piece.KING]);
+//		score += 100 * ((board.isCheckMate(eColor) ? 1 : 0) - (board.isCheckMate(pColor) ? 1 : 0));
+		score *= 64;
 
-		aggressive += 32 * ((board.isCheck(eColor) ? 1 : 0) - (board.isCheck(pColor) ? 1 : 0));
+//		aggressive += 32 * ((board.isCheck(eColor) ? 1 : 0) - (board.isCheck(pColor) ? 1 : 0));
 		aggressive += 1 * (pawnMobility[pColor] - pawnMobility[eColor]);
 		aggressive += 1 * (pawnAdvancedCentered[pColor] - pawnAdvancedCentered[eColor]);
 		aggressive += 1 * (pieceMobility[pColor] - pieceMobility[eColor]);
