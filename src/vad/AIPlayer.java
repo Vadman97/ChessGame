@@ -318,14 +318,12 @@ public class AIPlayer implements Player {
 				}
 			}
 		}
-		//BROKEN pawnAdvancedCentered, pieceMobility, pawnMobility
-
 		// king safety - keep king on starting row, pieces around king
 		// spaces protected/attacked by pawns
 		// prevent king reward for moving forward
-		// why are scores neg? something problematic with the score for the two
-		// sides
 		// rook having an open column (no friendlies in the way)
+		
+		// pawn promotion undo still broken
 
 		score += 1 * (countPieces[pColor][Piece.PAWN] - countPieces[eColor][Piece.PAWN]);
 		score += 3 * (countPieces[pColor][Piece.BISHOP] - countPieces[eColor][Piece.BISHOP]);
@@ -340,7 +338,7 @@ public class AIPlayer implements Player {
 		aggressive += 1 * (pawnMobility[pColor] - pawnMobility[eColor]);
 		aggressive += 1 * (pawnAdvancedCentered[pColor] - pawnAdvancedCentered[eColor]);
 		aggressive += 1 * (pieceMobility[pColor] - pieceMobility[eColor]);
-		aggressive += 16 * (piecesNotOnFirstRow[pColor] - piecesNotOnFirstRow[eColor]);
+		aggressive += 32 * (piecesNotOnFirstRow[pColor] - piecesNotOnFirstRow[eColor]);
 		aggressive += 16 * (pawnColumnPenalty[pColor] - pawnColumnPenalty[eColor]);
 		aggressive += 32 * (knighNotIsolated[pColor] - knighNotIsolated[eColor]);
 		aggressive += 1 * (squaresControlled[pColor] - squaresControlled[eColor]);
