@@ -2,143 +2,140 @@ package vad;
 
 import java.io.Serializable;
 
-public class Position implements Serializable
-{
+public class Position implements Serializable {
 	private static final long serialVersionUID = -4029933612261284275L;
-	
+
 	private static final Position[][] positions = new Position[8][8];
 	private static final Position[] allPositions = new Position[64];
 
-	static
-	{
+	static {
 		int i = 0;
-		for (int r = 0; r < 8; r++)
-		{
-			for (int c = 0; c < 8; c++)
-			{
+		for (int r = 0; r < 8; r++) {
+			for (int c = 0; c < 8; c++) {
 				allPositions[i++] = positions[c][r] = new Position(c, r);
 			}
 		}
 	}
 
-	public static Position get(int col, int row)
-	{
+	public static Position get(int col, int row) {
 		return positions[col][row];
 	}
 
-	public static Position[] all()
-	{
+	public static Position[] all() {
 		return allPositions;
 	}
 
 	int col, row;
 
-	private Position(int col, int row)
-	{
+	private Position(int col, int row) {
 		this.col = col;
 		this.row = row;
 	}
 
-	public int getColumn()
-	{
+	public int getColumn() {
 		return col;
 	}
 
-	public int getRow()
-	{
+	public int getRow() {
 		return row;
 	}
 
 	@Override
-	public String toString()
-	{
+	public String toString() {
 		return "[" + col + ", " + row + "]";
 	}
 
-	public Position getRight()
-	{
+	public int hashCode() {
+		int hash = 17;
+		hash = hash * 31 + col;
+		hash = hash * 31 + row;
+		return hash;
+
+	}
+
+	public boolean equals(Object o) {
+		if (o instanceof Position) {
+			Position other = (Position) o;
+			return other.col == col && other.row == row;
+		}
+		return false;
+	}
+
+	public Position getRight() {
 		if (col == 7)
 			return null;
 		return get(col + 1, row);
 	}
 
-	public Position getLeft()
-	{
+	public Position getLeft() {
 		if (col == 0)
 			return null;
 		return get(col - 1, row);
 	}
 
-	public Position getUp()
-	{
+	public Position getUp() {
 		if (row == 0)
 			return null;
 		return get(col, row - 1);
 	}
 
-	public Position getDown()
-	{
+	public Position getDown() {
 		if (row == 7)
 			return null;
 		return get(col, row + 1);
 	}
 
-	public Position getUpLeft()
-	{
+	public Position getUpLeft() {
 		if (row == 0 || col == 0)
 			return null;
 		return get(col - 1, row - 1);
 	}
 
-	public Position getUpRight()
-	{
+	public Position getUpRight() {
 		if (row == 0 || col == 7)
 			return null;
 		return get(col + 1, row - 1);
 	}
 
-	public Position getDownLeft()
-	{
+	public Position getDownLeft() {
 		if (row == 7 || col == 0)
 			return null;
 		return get(col - 1, row + 1);
 	}
 
-	public Position getDownRight()
-	{
+	public Position getDownRight() {
 		if (row == 7 || col == 7)
 			return null;
 		return get(col + 1, row + 1);
 	}
 
-	public Position getRelative(int dc, int dr)
-	{
+	public Position getRelative(int dc, int dr) {
 		int c = col + dc;
 		int r = row + dr;
-		if (c < 0 || c > 7 || r < 0 || r > 7)
-		{
+		if (c < 0 || c > 7 || r < 0 || r > 7) {
 			return null;
 		}
 		return get(c, r);
 	}
-	
-	private static class PositionReference implements Serializable{
+
+	private static class PositionReference implements Serializable {
 		private static final long serialVersionUID = 1439457913793333450L;
-		
+
 		private int col;
 		private int row;
-		public PositionReference(Position p){
-			col=p.col;
-			row=p.row;
+
+		public PositionReference(Position p) {
+			col = p.col;
+			row = p.row;
 		}
-		
-		private Object readResolve(){
+
+		private Object readResolve() {
 			return Position.positions[col][row];
 		}
 	}
 
-	private Object writeReplace(){
+	private Object writeReplace() {
 		return new PositionReference(this);
 	}
-	
+
 }

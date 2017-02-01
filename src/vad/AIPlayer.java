@@ -1,9 +1,12 @@
 package vad;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
+import java.util.Set;
 
 public class AIPlayer implements Player {
 	public static final int CACHE_INITIAL_SIZE = 2000003;
@@ -16,15 +19,16 @@ public class AIPlayer implements Player {
 
 	public static final int REPEATED_MOVE_PENALTY = 10000;
 
-	private static final boolean UI_ENABLED = false;
+	private static final boolean UI_ENABLED = true;
 
 	public static long SEARCH_LIMIT_NS = (long) (7 * 1e9); // nanoseconds
 
 	long searchStart;
 	private int playerColor;
 	int depth = 100;
-	HashMap<CompressedGameBoard, TranspositionTableEntry> cache = new HashMap<>(CACHE_INITIAL_SIZE, CACHE_LOAD_FACTOR);
-
+	Map<CompressedGameBoard, TranspositionTableEntry> cache = new HashMap<>(CACHE_INITIAL_SIZE, CACHE_LOAD_FACTOR);
+	Set<Move> visitedMoves = new HashSet<>();
+	
 	ChessGUI gui;
 
 	int benchMark;
@@ -124,9 +128,18 @@ public class AIPlayer implements Player {
 			for (Move child : board.getAllPossibleMoves(board.currentColor)) {
 				if (score >= beta)
 					break;
+				
+				//DANGER
+				if (visitedMoves.contains(child)) {
+					System.out.println("!!!Skipping visited move!!!");
+					continue;
+				}
+				
 				board.apply(child);
+				visitedMoves.add(child);
 				ScoredMove val = AlphaBetaWithMemory(board, a, beta, d - 1, child);
 				board.undo(child);
+				visitedMoves.remove(child);
 				if (val == null)
 					return null;
 				if (val.score > score) {
@@ -142,9 +155,18 @@ public class AIPlayer implements Player {
 			for (Move child : board.getAllPossibleMoves(board.currentColor)) {
 				if (score <= alpha)
 					break;
+				
+				//DANGER
+				if (visitedMoves.contains(child)) {
+					System.out.println("!!!Skipping visited move!!!");
+					continue;
+				}
+				
 				board.apply(child);
+				visitedMoves.add(child);
 				ScoredMove val = AlphaBetaWithMemory(board, alpha, b, d - 1, child);
 				board.undo(child);
+				visitedMoves.remove(child);
 				if (val == null)
 					return null;
 				if (val.score < score) {
@@ -169,6 +191,7 @@ public class AIPlayer implements Player {
 	public ScoredMove getBestMoveMTDF(GameBoard board, int startScore, int d) {
 		int lb = MIN;
 		int ub = MAX;
+		visitedMoves.clear();
 		ScoredMove g = new ScoredMove(null, startScore);
 		do {
 			if (System.nanoTime() - searchStart > SEARCH_LIMIT_NS)
@@ -379,6 +402,8 @@ public class AIPlayer implements Player {
 		// pawn promotion undo still broken
 		// play with pawn heuristic weights
 		// prevent cycles in search by using a set of moves checked?
+		
+		// bonus for number of moves each piece has
 
 		score += 1 * (countPieces[pColor][Piece.PAWN] - countPieces[eColor][Piece.PAWN]);
 		score += 3 * (countPieces[pColor][Piece.BISHOP] - countPieces[eColor][Piece.BISHOP]);

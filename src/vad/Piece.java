@@ -49,6 +49,21 @@ public class Piece implements Serializable
 		return (color==BLACK?"Black ":"White ")+NAMES[type];
 	}
 	
+	public int hashCode() {
+		int hash = 17;
+	    hash = hash * 31 + type;
+	    hash = hash * 31 + color;
+	    return hash;
+	}
+	
+	public boolean equals(Object o) {
+		if (o instanceof Piece) {
+			 Piece other = (Piece)o;
+			 return other.color == color && other.type == type;
+		}
+		return false;
+	}
+	
 	private static class PieceReference implements Serializable{
 		private static final long serialVersionUID = 1439457913793333450L;
 		
