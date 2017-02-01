@@ -1,5 +1,6 @@
 package vad;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -42,15 +43,10 @@ public class AIPlayer implements Player {
 
 	public int myRow = -1, enemyRow = -1;
 
-	/* values from 1-4 */
-	private int aggrMult, defMult;
-
 	Queue<Move> lastMoves = new LinkedList<>();
 
 	public AIPlayer(int playerColor) {
 		this.playerColor = playerColor;
-		aggrMult = r.nextInt(4) + 1;
-		defMult = r.nextInt(4) + 1;
 
 		if (UI_ENABLED)
 			gui = new ChessGUI(null, playerColor);
@@ -225,7 +221,7 @@ public class AIPlayer implements Player {
 			} else
 				firstGuess = temp;
 
-			System.out.println("Searched to depth " + d + " and found move score " + firstGuess.score);
+//			System.out.println("Searched to depth " + d + " and found move score " + firstGuess.score);
 		}
 		System.out.println("Finished search to depth " + (d - 1) + " with score " + firstGuess.score);
 		return firstGuess;
@@ -237,7 +233,6 @@ public class AIPlayer implements Player {
 		 * but MTD-F search less nodes All these three should give same results
 		 * - which is the optimal result.
 		 */
-		System.out.println("My aggressive multiplier is " + aggrMult + " and defensive multiplier is " + defMult);
 		System.out.println("AI Thinking.....");
 		benchMark = 0;
 		long start = System.nanoTime();
@@ -258,20 +253,12 @@ public class AIPlayer implements Player {
 		System.out.format("Nodes per second: %.3f\n", tpn);
 		System.out.println("AI Total Notes: " + totalNodes + " Sec: " + (totalTime / 1e9));
 		if (best.move == null) {
-			System.out.println("No good move found! Picking first possible move.");
+			System.out.println("No good move found! Picking random move.");
 			if (board.getAllPossibleMoves(playerColor).size() == 0) {
-				System.out.println("~~~~~~~~~I RESIGN~~~~~~~~~~");
-				System.out.println(
-						"My aggressive multiplier was " + aggrMult + " and defensive multiplier was " + defMult);
-				while (true) {
-					try {
-						Thread.sleep(100);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
+				return null;
 			}
-			return board.getAllPossibleMoves(playerColor).get(0);
+			ArrayList<Move> moves = board.getAllPossibleMoves(playerColor);
+			return moves.get(r.nextInt(moves.size()));
 		}
 		return best.move;
 	}

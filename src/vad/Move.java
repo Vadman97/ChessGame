@@ -74,7 +74,8 @@ public class Move implements Serializable {
 			if (getDestPosition().equals(other.getDestPosition())) {
 				if (startPiece == null ? other.startPiece == null : startPiece.equals(other.startPiece)) {
 					if (killedPiece == null ? other.killedPiece == null : killedPiece.equals(other.killedPiece))
-						return flags == other.flags;
+						return true;
+						//return flags == other.flags;
 				}
 			}
 		}
@@ -89,7 +90,7 @@ public class Move implements Serializable {
 		hash = hash * 31 + getDestPosition().hashCode();
 		hash = hash * 31 + sphc;
 		hash = hash * 31 + kphc;
-		hash = hash * 31 + flags;
-		return hash % Integer.MAX_VALUE;
+		//hash = hash * 31 + flags;
+		return hash;
 	}
 }
