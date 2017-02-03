@@ -1,4 +1,4 @@
-# Java Chess Game with strong AI engine (ELO ~1500 @ 15s search).
+# Java Chess Game and AI (ELO ~1500 @ 15s).
 
 ## The GUI
 The graphical interface is made in Java Swing and features simple and easy to use functionality for interacting with the AI agent.
