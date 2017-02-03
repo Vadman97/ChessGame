@@ -133,10 +133,9 @@ public class GameBoard
 				setPiece(rookPosition, null);
 				setCastled(currentColor, true);
 			}
-		} else if (startPiece.getType() == Piece.PAWN) {
+		} else if (m.isPawnPromotion()) {
 			//Pawn promotion
-			if (dest.getRow() == 0 || dest.getRow() == 7)
-				startPiece = new Piece(startPiece.getColor(), Piece.QUEEN);
+			startPiece = new Piece(startPiece.getColor(), Piece.QUEEN);
 		}
 
 		setPiece(start, null);
@@ -188,10 +187,9 @@ public class GameBoard
 				setPiece(rookCurrentPosition, null);
 				setCastled(movedPiece.getColor(), false);
 			}
-		} else if (movedPiece.getType() == Piece.PAWN) {
+		} else if (move.isPawnPromotion()) {
 			//Pawn promotion undo
-			if (dest.getRow() == 0 || dest.getRow() == 7)
-				movedPiece = new Piece(movedPiece.getColor(), Piece.PAWN);
+			movedPiece = new Piece(movedPiece.getColor(), Piece.PAWN);
 		}
 
 		setPiece(move.getStartPosition(), movedPiece);

@@ -92,7 +92,6 @@ public class ChessGUI extends JFrame implements ActionListener
 
 	public void updateBoard(GameBoard board)
 	{
-		System.out.println("Update board");
 		for (Position position : Position.all())
 		{
 			PieceButton button = buttons[position.getColumn()][position.getRow()];

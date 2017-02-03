@@ -58,7 +58,7 @@ public class AIPlayer implements Player {
 	public Move makeMove(GameBoard board) {
 		long start = System.currentTimeMillis();
 		thinking = true;
-		if (myRow == -1) {
+		if (myRow == -1 && board.getPiece(Position.get(0, 0)) != null) {
 			if (board.getPiece(Position.get(0, 0)).getColor() == playerColor) {
 				myRow = 0;
 				enemyRow = 7;
@@ -125,9 +125,9 @@ public class AIPlayer implements Player {
 				if (visitedMoves.contains(child)) {
 					continue;
 				}
-				
-				board.apply(child);
+
 				visitedMoves.add(child);
+				board.apply(child);
 				ScoredMove val = AlphaBetaWithMemory(board, a, beta, d - 1, child);
 				board.undo(child);
 				visitedMoves.remove(child);
@@ -151,9 +151,9 @@ public class AIPlayer implements Player {
 				if (visitedMoves.contains(child)) {
 					continue;
 				}
-				
-				board.apply(child);
+
 				visitedMoves.add(child);
+				board.apply(child);
 				ScoredMove val = AlphaBetaWithMemory(board, alpha, b, d - 1, child);
 				board.undo(child);
 				visitedMoves.remove(child);
@@ -379,7 +379,6 @@ public class AIPlayer implements Player {
 		// prevent king reward for moving forward
 		// rook having an open column (no friendlies in the way)
 
-		// pawn promotion undo still broken
 		// play with pawn heuristic weights
 		// prevent cycles in search by using a set of moves checked?
 

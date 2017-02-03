@@ -16,6 +16,7 @@ public class Move implements Serializable {
 	public static final int KING_MOVED_FLAG = 0;
 	public static final int L_ROOK_FLAG = 1;
 	public static final int R_ROOK_FLAG = 2;
+	public static final int PAWN_PROMOTION_FLAG = 3;
 
 	public Move(GameBoard b, Position start, Position dest) {
 		this.startPiece = b.getPiece(start);
@@ -35,6 +36,9 @@ public class Move implements Serializable {
 			} else if (start.getColumn() == 7 && start.getRow() == 0 && !b.hasRRookMoved(startPiece.getColor())) {
 				flags = (byte) BitField.setBit(flags, R_ROOK_FLAG);
 			}
+		}
+		if ((dest.getRow() == 0 || dest.getRow() == 7) && startPiece.getType() == Piece.PAWN) {
+			flags = (byte) BitField.setBit(flags, PAWN_PROMOTION_FLAG);
 		}
 	}
 
@@ -65,6 +69,10 @@ public class Move implements Serializable {
 
 	public boolean isFirstRRookMove() {
 		return BitField.getBit(flags, R_ROOK_FLAG);
+	}
+	
+	public boolean isPawnPromotion() {
+		return BitField.getBit(flags, PAWN_PROMOTION_FLAG);
 	}
 
 	public boolean equals(Object o) {
