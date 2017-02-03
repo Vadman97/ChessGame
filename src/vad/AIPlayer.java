@@ -121,7 +121,6 @@ public class AIPlayer implements Player {
 				if (score >= beta)
 					break;
 
-				// DANGER
 				if (visitedMoves.contains(child)) {
 					continue;
 				}
@@ -147,7 +146,6 @@ public class AIPlayer implements Player {
 				if (score <= alpha)
 					break;
 
-				// DANGER
 				if (visitedMoves.contains(child)) {
 					continue;
 				}
@@ -221,11 +219,6 @@ public class AIPlayer implements Player {
 	}
 
 	public Move getBestMove(GameBoard board, int d) {
-		/*
-		 * Due to unknown reason, negascout search more nodes than negamax(why?)
-		 * but MTD-F search less nodes All these three should give same results
-		 * - which is the optimal result.
-		 */
 		System.out.println("AI Thinking.....");
 		benchMark = 0;
 		long start = System.nanoTime();
@@ -241,9 +234,8 @@ public class AIPlayer implements Player {
 		totalNodes += benchMark;
 		totalTime += (System.nanoTime() - start);
 		double time = (System.nanoTime() - start) / 1.0e9;
-		System.out.println(benchMark + " nodes searched in " + time);
 		double tpn = benchMark / time;
-		System.out.format("Nodes per second: %.3f\n", tpn);
+		System.out.format(benchMark + " nodes searched in " + time + ". Nodes per second: %.3f\n", tpn);
 		System.out.println("AI Total Nodes: " + totalNodes + " Sec: " + (totalTime / 1e9));
 		if (best.move == null) {
 			System.out.println("No good move found! Picking random move.");
@@ -374,15 +366,9 @@ public class AIPlayer implements Player {
 				}
 			}
 		}
-		// king safety - keep king on starting row, pieces around king
 		// spaces protected/attacked by pawns
-		// prevent king reward for moving forward
-		// rook having an open column (no friendlies in the way)
 
 		// play with pawn heuristic weights
-		// prevent cycles in search by using a set of moves checked?
-
-		// bonus for number of moves each piece has
 
 		score += 1 * (countPieces[pColor][Piece.PAWN] - countPieces[eColor][Piece.PAWN]);
 		score += 3 * (countPieces[pColor][Piece.BISHOP] - countPieces[eColor][Piece.BISHOP]);
