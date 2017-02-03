@@ -55,8 +55,7 @@ public class OldAIPlayer implements Player {
 	}
 
 	@Override
-	public Move makeMove(CompressedGameBoard cpdboard) {
-		GameBoard board = cpdboard.getGameBoard();
+	public Move makeMove(GameBoard board) {
 		realBoard = board;
 		long start = System.currentTimeMillis();
 		thinking = true;
@@ -77,11 +76,6 @@ public class OldAIPlayer implements Player {
 		System.out.println("AI Think time: " + timeSec + " depth: " + depth + " pieces: " + board.getNumAllPieces());
 		thinking = false;
 		return move;
-	}
-
-	@Override
-	public void update(CompressedGameBoard board) {
-		update(board.getGameBoard());
 	}
 
 	public void update(GameBoard board) {

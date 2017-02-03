@@ -16,22 +16,14 @@ public class UserPlayer implements Player, ClickListener
 		this.playerColor = playerColor;
 		gui = new ChessGUI(this, playerColor);
 	}
-	
-	@Override
-	public void update(CompressedGameBoard board)
-	{
-		update(board.getGameBoard());
-	}
 
 	public void update(GameBoard board)
 	{
 		gui.updateBoard(board);
 	}
 
-	public Move makeMove(CompressedGameBoard cgb)
+	public Move makeMove(GameBoard b)
 	{
-		GameBoard b=cgb.getGameBoard();
-		update(b);
 		board = b;
 		synchronized (this)
 		{

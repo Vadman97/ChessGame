@@ -24,16 +24,15 @@ public class Main {
 
 	public static void startGame(Player p1, Player p2) {
 		GameBoard board = new GameBoard();
+		p1.update(board);
+		p2.update(board);
 		int currentTurn = Piece.WHITE;
 		Player[] players = new Player[Piece.COLORS.length];
 		players[0] = p1.getColor() == Piece.WHITE ? p1 : p2;
 		players[1] = p2.getColor() == Piece.BLACK ? p2 : p1;
 		while (true) {
 			currentTurn = (currentTurn + 1) % 2;
-			CompressedGameBoard b = new CompressedGameBoard(board);
-			p1.update(b);
-			p2.update(b);
-			Move m = players[currentTurn].makeMove(b);
+			Move m = players[currentTurn].makeMove(board);
 			if (m == null) {
 				System.out.println("~~~~~~~" + players[currentTurn].getClass().getName() + " Defeated~~~~~~~~~");
 				while (true) {
@@ -45,6 +44,8 @@ public class Main {
 				}
 			}
 			board.apply(m);
+			p1.update(board);
+			p2.update(board);
 		}
 	}
 
@@ -58,13 +59,13 @@ public class Main {
 			socket.close();
 		} else {
 			// p2 = new UserPlayer(Piece.getOppositeColor(col));
-			p2 = new AIPlayer(Piece.getOppositeColor(col));
+			p2 = new AIPlayer(Piece.getOppositeColor(col), 3.0);
 			// p2 = new OldAIPlayer(Piece.getOppositeColor(col));
 		}
 		// Player p1 = new DebugPlayer(col, (AIPlayer) p2);
-		// Player p1 = new UserPlayer(col);
+		Player p1 = new UserPlayer(col);
 		// Player p1 = new OldAIPlayer(col);
-		Player p1 = new AIPlayer(col);
+		// Player p1 = new AIPlayer(col, 10.0);
 
 		startGame(p1, p2);
 	}

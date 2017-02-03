@@ -21,19 +21,11 @@ public class DebugPlayer implements Player {
 		r = new Random();
 	}
 
-	@Override
-	public void update(CompressedGameBoard board) {
-		update(board.getGameBoard());
-	}
-
 	public void update(GameBoard board) {
 		gui.updateBoard(board);
 	}
 
-	public Move makeMove(CompressedGameBoard cgb) {
-		GameBoard b = cgb.getGameBoard();
-		update(b);
-		
+	public Move makeMove(GameBoard b) {
 		if (movesMade == 11) {
 			System.out.println("============ 10 MOVES HAVE BEEN PLAYED===========");
 			System.out.println(opponent.totalNodes + " " + (opponent.totalTime / 1e9));

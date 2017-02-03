@@ -67,15 +67,16 @@ public class Move implements Serializable {
 		return BitField.getBit(flags, R_ROOK_FLAG);
 	}
 
-	public boolean equals(Move other) {
-		if (other == null)
+	public boolean equals(Object o) {
+		if (o == null)
 			return false;
-		if (getStartPosition().equals(other.getStartPosition())) {
-			if (getDestPosition().equals(other.getDestPosition())) {
-				if (startPiece == null ? other.startPiece == null : startPiece.equals(other.startPiece)) {
-					if (killedPiece == null ? other.killedPiece == null : killedPiece.equals(other.killedPiece))
-						return true;
-						//return flags == other.flags;
+		Move m = (Move) o;
+		if (getStartPosition().equals(m.getStartPosition())) {
+			if (getDestPosition().equals(m.getDestPosition())) {
+				if (startPiece == null ? m.startPiece == null : startPiece.equals(m.startPiece)) {
+					if (killedPiece == null ? m.killedPiece == null : killedPiece.equals(m.killedPiece)) {
+						return flags == m.flags;
+					}
 				}
 			}
 		}
@@ -90,7 +91,7 @@ public class Move implements Serializable {
 		hash = hash * 31 + getDestPosition().hashCode();
 		hash = hash * 31 + sphc;
 		hash = hash * 31 + kphc;
-		//hash = hash * 31 + flags;
-		return hash;
+		hash = hash * 31 + flags;
+		return hash % Integer.MAX_VALUE;
 	}
 }
