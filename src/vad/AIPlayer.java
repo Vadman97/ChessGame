@@ -20,7 +20,7 @@ public class AIPlayer implements Player {
 
 	public static final int REPEATED_MOVE_PENALTY = 10000;
 
-	private static final boolean UI_ENABLED = false;
+	private static final boolean UI_ENABLED = true;
 
 	public long SEARCH_LIMIT_NS = (long) (7 * 1e9); // nanoseconds
 
