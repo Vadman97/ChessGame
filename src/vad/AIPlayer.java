@@ -36,7 +36,7 @@ public class AIPlayer implements Player {
 
 	Random r = new Random();
 
-	public boolean thinking = false;
+	public volatile boolean thinking = false;
 
 	public long totalTime = 0;
 	public long totalNodes = 0;
@@ -56,7 +56,6 @@ public class AIPlayer implements Player {
 
 	@Override
 	public Move makeMove(GameBoard board) {
-		long start = System.currentTimeMillis();
 		thinking = true;
 		if (myRow == -1 && board.getPiece(Position.get(0, 0)) != null) {
 			if (board.getPiece(Position.get(0, 0)).getColor() == playerColor) {
@@ -67,11 +66,7 @@ public class AIPlayer implements Player {
 				enemyRow = 0;
 			}
 		}
-
-		Move move = getBestMove(board, depth);
-		long end = System.currentTimeMillis();
-		double timeSec = (end - start) / 1000.;
-
+		
 		if (board.getNumAllPieces() <= 24 && increased == 0) {
 			SEARCH_LIMIT_NS *= 2;
 			increased++;
@@ -83,7 +78,7 @@ public class AIPlayer implements Player {
 			increased++;
 		}
 
-		System.out.println("AI Think time: " + timeSec + " pieces: " + board.getNumAllPieces());
+		Move move = getBestMove(board, depth);
 		thinking = false;
 		return move;
 	}
@@ -164,6 +159,7 @@ public class AIPlayer implements Player {
 				b = Math.min(b, score);
 			}
 		}
+		
 		if (score <= alpha) {
 			cache.put(cb, new TranspositionTableEntry(MIN, score, best));
 		}
@@ -173,6 +169,7 @@ public class AIPlayer implements Player {
 		if (score >= beta) {
 			cache.put(cb, new TranspositionTableEntry(score, MAX, best));
 		}
+		
 		return new ScoredMove(best, score);
 	}
 
@@ -213,18 +210,26 @@ public class AIPlayer implements Player {
 				firstGuess = temp;
 			// System.out.println("Searched to depth " + d + " and found move
 			// score " + firstGuess.score);
+
+			// clear cache if we only have 256 MB left
+			// this should be ok because most of the stuff in the cache will be old nodes
+			// that we won't look at again, i assume this program is run with ~8GB ram
+			if (Runtime.getRuntime().freeMemory() < 256 * 1000000) {
+				System.out.println("Clearing cache!");
+				cache.clear();
+				System.gc();
+			}
 		}
 		System.out.println("Finished search to depth " + (d - 1) + " with score " + firstGuess.score);
 		return firstGuess;
 	}
 
 	public Move getBestMove(GameBoard board, int d) {
-		System.out.println("AI Thinking.....");
+		System.out.println("AI Thinking..........");
 		benchMark = 0;
 		long start = System.nanoTime();
 
 		ScoredMove best = getBestMoveIterativeMTDF(board, d);
-		System.out.println("Best move score: " + best.score);
 
 		// keep last 3 moves
 		if (lastMoves.size() > 3)
@@ -236,7 +241,8 @@ public class AIPlayer implements Player {
 		double time = (System.nanoTime() - start) / 1.0e9;
 		double tpn = benchMark / time;
 		System.out.format(benchMark + " nodes searched in " + time + ". Nodes per second: %.3f\n", tpn);
-		System.out.println("AI Total Nodes: " + totalNodes + " Sec: " + (totalTime / 1e9));
+		System.out.format("AI Total Nodes: %d Nodes cached: %d Sec: %.3f pieces: %d", 
+						  totalNodes, cache.size(), (totalTime / 1e9), board.getNumAllPieces());
 		if (best.move == null) {
 			System.out.println("No good move found! Picking random move.");
 			if (board.getAllPossibleMoves(playerColor).size() == 0) {
@@ -291,6 +297,8 @@ public class AIPlayer implements Player {
 		short[] kingHome = new short[Piece.COLORS.length];
 		short[] piecesSurroundingKing = new short[Piece.COLORS.length];
 		short[] rookOpenCol = new short[Piece.COLORS.length];
+		boolean[] check = new boolean[Piece.COLORS.length];
+		boolean[] checkMate = new boolean[Piece.COLORS.length];
 
 		for (short col = 0; col < GameBoard.WIDTH; col++) {
 			for (short row = 0; row < GameBoard.HEIGHT; row++) {
@@ -366,8 +374,13 @@ public class AIPlayer implements Player {
 				}
 			}
 		}
+		
+		for (int i: Piece.COLORS) {
+			check[i] = board.isCheck(i);
+			checkMate[i] = squaresControlled[i] == 0 && check[i];
+		}
+		
 		// spaces protected/attacked by pawns
-
 		// play with pawn heuristic weights
 
 		score += 1 * (countPieces[pColor][Piece.PAWN] - countPieces[eColor][Piece.PAWN]);
@@ -376,12 +389,10 @@ public class AIPlayer implements Player {
 		score += 5 * (countPieces[pColor][Piece.ROOK] - countPieces[eColor][Piece.ROOK]);
 		score += 9 * (countPieces[pColor][Piece.QUEEN] - countPieces[eColor][Piece.QUEEN]);
 		score += 100 * (countPieces[pColor][Piece.KING] - countPieces[eColor][Piece.KING]);
-		// score += 100 * ((board.isCheckMate(eColor) ? 1 : 0) -
-		// (board.isCheckMate(pColor) ? 1 : 0));
+		score += 100 * ((checkMate[eColor] ? 1 : 0) - (checkMate[pColor] ? 1 : 0));
 		score *= 64;
 
-		// aggressive += 32 * ((board.isCheck(eColor) ? 1 : 0) -
-		// (board.isCheck(pColor) ? 1 : 0));
+		aggressive += 16 * ((check[eColor] ? 1 : 0) - (check[pColor] ? 1 : 0));
 		aggressive += 2 * (pawnMobility[pColor] - pawnMobility[eColor]);
 		aggressive += 2 * (pawnAdvancedCentered[pColor] - pawnAdvancedCentered[eColor]);
 		aggressive += 1 * (pieceMobility[pColor] - pieceMobility[eColor]);

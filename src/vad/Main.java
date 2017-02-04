@@ -59,13 +59,13 @@ public class Main {
 			socket.close();
 		} else {
 			// p2 = new UserPlayer(Piece.getOppositeColor(col));
-			p2 = new AIPlayer(Piece.getOppositeColor(col), 5.0);
+			p2 = new AIPlayer(Piece.getOppositeColor(col), 15.0);
 			// p2 = new OldAIPlayer(Piece.getOppositeColor(col));
 		}
 		// Player p1 = new DebugPlayer(col, (AIPlayer) p2);
-		Player p1 = new UserPlayer(col);
+//		Player p1 = new UserPlayer(col);
 		// Player p1 = new OldAIPlayer(col);
-		// Player p1 = new AIPlayer(col, 10.0);
+		 Player p1 = new AIPlayer(col, 15.0);
 
 		startGame(p1, p2);
 	}

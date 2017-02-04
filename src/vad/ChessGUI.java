@@ -96,7 +96,7 @@ public class ChessGUI extends JFrame implements ActionListener
 		{
 			PieceButton button = buttons[position.getColumn()][position.getRow()];
 			Piece piece = board.getPiece(position);
-			if (button.getPiece() != piece) {
+			if (!button.getPiece().equals(piece)) {
 				button.setPiece(piece, !firstUpdate);
 			} else if (piece != null && piece.getType() == Piece.KING && board.isCheck(piece.getColor())) {
 				button.setPieceCheck(piece);
