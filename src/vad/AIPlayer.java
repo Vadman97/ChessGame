@@ -2,12 +2,10 @@ package vad;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
-import java.util.Set;
 
 public class AIPlayer implements Player {
 	public static final int CACHE_INITIAL_SIZE = 2000003;
@@ -23,12 +21,13 @@ public class AIPlayer implements Player {
 	private static final boolean UI_ENABLED = true;
 
 	public long SEARCH_LIMIT_NS = (long) (7 * 1e9); // nanoseconds
+	public static final int MOVE_MAX_REPETITIONS = 3;
 
 	long searchStart;
 	private int playerColor;
 	int depth = 100;
 	Map<CompressedGameBoard, TranspositionTableEntry> cache = new HashMap<>(CACHE_INITIAL_SIZE, CACHE_LOAD_FACTOR);
-	Set<Move> visitedMoves = new HashSet<>();
+	Map<Move, Integer> visitedMoves = new HashMap<>(CACHE_INITIAL_SIZE, CACHE_LOAD_FACTOR);
 
 	ChessGUI gui;
 
@@ -56,6 +55,7 @@ public class AIPlayer implements Player {
 
 	@Override
 	public Move makeMove(GameBoard board) {
+		
 		thinking = true;
 		if (myRow == -1 && board.getPiece(Position.get(0, 0)) != null) {
 			if (board.getPiece(Position.get(0, 0)).getColor() == playerColor) {
@@ -66,6 +66,9 @@ public class AIPlayer implements Player {
 				enemyRow = 0;
 			}
 		}
+
+		System.out.println(board);
+		System.out.println("Current enemy board value: " + evaluateBoard(board, null));
 		
 		if (board.getNumAllPieces() <= 24 && increased == 0) {
 			SEARCH_LIMIT_NS *= 2;
@@ -116,15 +119,25 @@ public class AIPlayer implements Player {
 				if (score >= beta)
 					break;
 
-				if (visitedMoves.contains(child)) {
+				if (visitedMoves.containsKey(child) && visitedMoves.get(child) >= MOVE_MAX_REPETITIONS) {
+					System.out.println("!!!SKIPPING REPEATED!!!");
 					continue;
+				} else if (visitedMoves.containsKey(child)) {
+					visitedMoves.put(child, visitedMoves.get(child) + 1);
+				} else {
+					visitedMoves.put(child, 1);
 				}
 
-				visitedMoves.add(child);
 				board.apply(child);
 				ScoredMove val = AlphaBetaWithMemory(board, a, beta, d - 1, child);
 				board.undo(child);
-				visitedMoves.remove(child);
+				
+				if (visitedMoves.get(child) > 1) {
+					visitedMoves.put(child, visitedMoves.get(child) - 1);
+				} else {
+					visitedMoves.remove(child);
+				}
+				
 				if (val == null)
 					return null;
 				if (val.score > score) {
@@ -141,15 +154,25 @@ public class AIPlayer implements Player {
 				if (score <= alpha)
 					break;
 
-				if (visitedMoves.contains(child)) {
+				if (visitedMoves.containsKey(child) && visitedMoves.get(child) >= MOVE_MAX_REPETITIONS) {
+					System.out.println("!!!SKIPPING REPEATED!!!");
 					continue;
+				} else if (visitedMoves.containsKey(child)) {
+					visitedMoves.put(child, visitedMoves.get(child) + 1);
+				} else {
+					visitedMoves.put(child, 1);
 				}
-
-				visitedMoves.add(child);
+				
 				board.apply(child);
 				ScoredMove val = AlphaBetaWithMemory(board, alpha, b, d - 1, child);
 				board.undo(child);
-				visitedMoves.remove(child);
+				
+				if (visitedMoves.get(child) > 1) {
+					visitedMoves.put(child, visitedMoves.get(child) - 1);
+				} else {
+					visitedMoves.remove(child);
+				}
+				
 				if (val == null)
 					return null;
 				if (val.score < score) {
@@ -241,7 +264,7 @@ public class AIPlayer implements Player {
 		double time = (System.nanoTime() - start) / 1.0e9;
 		double tpn = benchMark / time;
 		System.out.format(benchMark + " nodes searched in " + time + ". Nodes per second: %.3f\n", tpn);
-		System.out.format("AI Total Nodes: %d Nodes cached: %d Sec: %.3f pieces: %d", 
+		System.out.format("AI Total Nodes: %d Nodes cached: %d Sec: %.3f pieces: %d\n", 
 						  totalNodes, cache.size(), (totalTime / 1e9), board.getNumAllPieces());
 		if (best.move == null) {
 			System.out.println("No good move found! Picking random move.");
@@ -276,7 +299,7 @@ public class AIPlayer implements Player {
 	/*
 	 * always evaluate from the perspective of the current player
 	 */
-	public int evaluateBoard(GameBoard board, Move m) {
+	public int evaluateBoard(GameBoard board, Move lastMove) {
 		int pColor = playerColor; // board.currentColor; // pColor is row 6-7
 		int eColor = Piece.getOppositeColor(pColor); // eColor is row 0-1
 
@@ -394,7 +417,7 @@ public class AIPlayer implements Player {
 
 		aggressive += 16 * ((check[eColor] ? 1 : 0) - (check[pColor] ? 1 : 0));
 		aggressive += 2 * (pawnMobility[pColor] - pawnMobility[eColor]);
-		aggressive += 2 * (pawnAdvancedCentered[pColor] - pawnAdvancedCentered[eColor]);
+		aggressive += 1 * (pawnAdvancedCentered[pColor] - pawnAdvancedCentered[eColor]);
 		aggressive += 1 * (pieceMobility[pColor] - pieceMobility[eColor]);
 		aggressive += 32 * (piecesNotOnFirstRow[pColor] - piecesNotOnFirstRow[eColor]);
 		aggressive += 16 * (pawnColumnPenalty[pColor] - pawnColumnPenalty[eColor]);
@@ -409,7 +432,7 @@ public class AIPlayer implements Player {
 		// defensive *= 4 - aggrMult;
 
 		for (Move move : lastMoves) {
-			if (m != null && m.equals(move)) {
+			if (lastMove != null && lastMove.equals(move)) {
 				defensive -= 64;
 			}
 		}
